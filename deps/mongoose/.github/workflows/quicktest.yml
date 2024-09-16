@@ -1,0 +1,758 @@
+name: Build and test - essentials
+on:
+  push:
+    paths:
+      - "**Makefile"
+      - "**.c"
+      - "**.h"
+env:
+  IPV6: 0
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang++]
+        target: [test, mip_test]
+        ssl: ["", BUILTIN]
+    name: linux ${{ matrix.target }} CC=${{ matrix.cc }} SSL=${{ matrix.ssl }}
+    env:
+      CC: ${{ matrix.cc }}
+      SSL: ${{ matrix.ssl }}
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run: make -C test ${{ matrix.target }}
+  s390:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run: sudo apt -y update ; sudo apt -y install qemu binfmt-support qemu-user-static && docker run --rm --privileged multiarch/qemu-user-static --reset -p yes && make -C test s390
+  armhf:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run: sudo apt -y update ; sudo apt -y install qemu binfmt-support qemu-user-static && docker run --rm --privileged multiarch/qemu-user-static --reset -p yes && make -C test armhf
+  unamalgamated-mg_prefix:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run: make -C test unamalgamated && make -C test mg_prefix
+  macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ssl: ["", BUILTIN]
+    name: macos SSL=${{ matrix.ssl }}
+    env:
+      SSL: ${{ matrix.ssl }}
+      TFLAGS: -DNO_SNTP_CHECK
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run:  make -C test test ASAN_OPTIONS=
+  windows:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [vc98, vc22, mingw++]
+    name: windows ${{ matrix.target }}
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^test|^src/.*.[ch]' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - if: ${{ env.GO == 1 }}
+      run: make -C test ${{ matrix.target }} 
+  arm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test arm
+  riscv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test riscv
+
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test examples_essential
+    - run: make -C test clean_examples_essential
+  examples_win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+#    - uses: egor-tensin/setup-mingw@v2
+#      with:
+#        platform: x64
+    - name: test they build
+      run: make -C test examples_win
+      shell: cmd
+    - name: test they clean
+      run: make -C test clean_examples_win
+      shell: cmd
+  examples_mac:
+    runs-on: macos-latest
+    env: { HOMEBREW_NO_AUTO_UPDATE: 1 }
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test examples_mac
+    - run: make -C test clean_examples_mac
+
+  refprojs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test refprojs
+    - run: make -C test clean_refprojs
+  refprojs_win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+#    - uses: egor-tensin/setup-mingw@v2
+#      with:
+#        platform: x64
+    - name: test they build
+      run: make -C test refprojs_win
+      shell: cmd
+    - name: test they clean
+      run: make -C test clean_refprojs_win
+      shell: cmd
+  refprojs_mac:
+    runs-on: macos-latest
+    env: { HOMEBREW_NO_AUTO_UPDATE: 1 }
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test refprojs
+    - run: make -C test clean_refprojs
+
+  tutorials:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test tutorials_essential
+    - run: make -C test clean_tutorials_essential
+  tutorials_win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+#    - uses: egor-tensin/setup-mingw@v2
+#      with:
+#        platform: x64
+    - name: test they build
+      run: make -C test tutorials_win
+      shell: cmd
+    - name: test they clean
+      run: make -C test clean_tutorials_win
+      shell: cmd
+  tutorials_mac:
+    runs-on: macos-latest
+    env: { HOMEBREW_NO_AUTO_UPDATE: 1 }
+    steps:
+    - uses: actions/checkout@v4
+    - run: make -C test tutorials_mac
+    - run: make -C test clean_tutorials_mac
+
+
+  generic_examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: esp32/uart-bridge
+          - path: esp8266/http-client-server
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: if ./test/match_changed_files.sh '^src|^examples/${{ matrix.example.path }}'; then echo GO=1 >> $GITHUB_ENV ; fi
+      - if: ${{ env.GO == 1 }}
+        run: |
+          # nothing specific to install or do
+      - if: ${{ env.GO == 1 }}
+        run: make -C examples/${{ matrix.example.path }} build
+  
+  generic_examples_arm:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: infineon/infineon-xmc4700_4800-lwip-rtx-rtos
+          - path: stm32/nucleo-g031-make-baremetal-builtin
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: if ./test/match_changed_files.sh '^src|^examples/${{ matrix.example.path }}'; then echo GO=1 >> $GITHUB_ENV ; fi
+      - if: ${{ env.GO == 1 }}
+        run: sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+      - if: ${{ env.GO == 1 }}
+        run: make -C examples/${{ matrix.example.path }} build
+
+  device_dashboard_examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: esp32/device-dashboard
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: |
+          if ./test/match_changed_files.sh '^src|examples/device-dashboard|^examples/${{ matrix.example.path }}'; then
+            echo GO=1 >> $GITHUB_ENV
+            # nothing specific to install or do
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: make -C examples/${{ matrix.example.path }} build
+
+  device_dashboard_examples_arm:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: infineon/infineon-xmc7200
+          - path: microchip/same54-xpro/device-dashboard
+          - path: nxp/frdm-mcxn947-make-baremetal-builtin
+          - path: nxp/frdm-mcxn947-make-freertos-builtin
+          - path: nxp/rt1020-evk-make-baremetal-builtin
+          - path: nxp/rt1020-evk-make-freertos-builtin
+          - path: nxp/rt1060-evk-make-baremetal-builtin
+          - path: nxp/rt1060-evk-make-freertos-builtin
+          - path: nxp/rt1170-evk-make-baremetal-builtin
+          - path: nxp/rt1170-evk-make-freertos-builtin
+          - path: renesas/ek-ra6m4-make-baremetal-builtin
+          - path: rp2040/pico-rndis-dashboard
+          - path: rp2040/pico-w
+          - path: rp2040/pico-w5500
+          - path: stm32/nucleo-f429zi-make-baremetal-builtin
+          - path: stm32/nucleo-f429zi-make-freertos-builtin
+          - path: stm32/nucleo-f746zg-make-baremetal-builtin
+          - path: stm32/nucleo-f746zg-make-freertos-builtin
+          - path: stm32/nucleo-f746zg-make-freertos-tcp
+          - path: stm32/nucleo-f746zg-make-baremetal-builtin-cmsis_driver
+          - path: stm32/nucleo-h563zi-make-baremetal-builtin
+          - path: stm32/nucleo-h563zi-make-freertos-builtin
+          - path: stm32/nucleo-h723zg-make-freertos-builtin
+          - path: stm32/nucleo-h743zi-make-baremetal-builtin
+          - path: stm32/nucleo-h743zi-make-freertos-builtin
+          - path: stm32/stm32h573i-dk-make-baremetal-builtin
+          - path: stm32/stm32h573i-dk-make-freertos-builtin
+          - path: ti/ek-tm4c1294xl-make-baremetal-builtin
+          - path: ti/ek-tm4c1294xl-make-freertos-builtin
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: |
+          if ./test/match_changed_files.sh '^src|examples/device-dashboard|^examples/${{ matrix.example.path }}'; then
+            echo GO=1 >> $GITHUB_ENV
+            sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: make -C examples/${{ matrix.example.path }} build
+
+#  mqtt_dashboard_examples:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        example:
+#          - path: 
+#    name: ${{ matrix.example.path }}
+#    env:
+#      GO: 0
+#    steps:
+#      - uses: actions/checkout@v4
+#        with: { fetch-depth: 2 }
+#      - run: |
+#          if ./test/match_changed_files.sh '^src|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+#            echo GO=1 >> $GITHUB_ENV
+#            # nothing specific to install or do
+#          fi
+#      - if: ${{ env.GO == 1 }}
+#        run: make -C examples/${{ matrix.example.path }} build
+      
+  mqtt_dashboard_examples_arm:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: rp2040/pico-rndis-device
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: |
+          if ./test/match_changed_files.sh '^src|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+            echo GO=1 >> $GITHUB_ENV
+            sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: make -C examples/${{ matrix.example.path }} build
+      
+#  dual_examples:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        example:
+#          - path: 
+#    name: ${{ matrix.example.path }}
+#    env:
+#      GO: 0
+#    steps:
+#      - uses: actions/checkout@v4
+#        with: { fetch-depth: 2 }
+#      - run: |
+#          if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+#            echo GO=1 >> $GITHUB_ENV
+#            # nothing specific to install or do
+#          fi
+#      - if: ${{ env.GO == 1 }}
+#        run: |
+#          if ./test/match_changed_files.sh '^src|examples/device-dashboard|^examples/${{ matrix.example.path }}'; then
+#            make -C examples/${{ matrix.example.path }} device_dashboard
+#          fi
+#      - if: ${{ env.GO == 1 }}
+#        run: |
+#          if ./test/match_changed_files.sh '^src|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+#            make -C examples/${{ matrix.example.path }} mqtt_dashboard
+#          fi
+
+  dual_examples_arm:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - path: stm32/nucleo-h723zg-make-baremetal-builtin
+    name: ${{ matrix.example.path }}
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: |
+          if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+            echo GO=1 >> $GITHUB_ENV
+            sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: |
+          if ./test/match_changed_files.sh '^src|examples/device-dashboard|^examples/${{ matrix.example.path }}'; then
+            make -C examples/${{ matrix.example.path }} device_dashboard
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: |
+          if ./test/match_changed_files.sh '^src|examples/mqtt-dashboard/device|^examples/${{ matrix.example.path }}'; then
+            make -C examples/${{ matrix.example.path }} mqtt_dashboard
+          fi
+
+  cube_examples:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - run: |
+          if ./test/match_changed_files.sh '^src|examples/stm32/nucleo-*-cube-*'; then
+            echo GO=1 >> $GITHUB_ENV
+            # nothing specific to install or do
+          fi
+      - if: ${{ env.GO == 1 }}
+        run: cd test/cube && make
+
+  test_f7:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/stm32|examples/nxp|examples/ti|examples/microchip/same" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    # always run baremetal on core or dashboard or specific example changes; other examples only on specific example changes
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true   # continue so next test has a chance to re-flash and exit from collisions and flash failures
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/stm32/nucleo-f746zg-make-baremetal-builtin'; then
+          make -C examples/stm32/nucleo-f746zg-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f746zg-make-freertos-builtin'; then
+          make -C examples/stm32/nucleo-f746zg-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f746zg-make-freertos-tcp'; then
+          make -C examples/stm32/nucleo-f746zg-make-freertos-tcp test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - name: Cube
+      run: |
+        echo GO=0 >> $GITHUB_ENV
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f7.*-cube-'; then
+          echo GO=1 >> $GITHUB_ENV
+          # nothing specific to install or do
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f746zg-cube-baremetal-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f746zg-cube-baremetal-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=5
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f746zg-cube-freertos-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f746zg-cube-freertos-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=5    
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f746zg-cube-freertos-lwip'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f746zg-cube-freertos-lwip VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=5
+        fi
+
+
+  test_f4:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/stm32/nucleo-f4.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/stm32/nucleo-f429zi-make-baremetal-builtin'; then
+          make -C examples/stm32/nucleo-f429zi-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f429zi-make-freertos-builtin'; then
+          make -C examples/stm32/nucleo-f429zi-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - name: Cube
+      run: |
+        echo GO=0 >> $GITHUB_ENV
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f4.*-cube-'; then
+          echo GO=1 >> $GITHUB_ENV
+          # nothing specific to install or do
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f429zi-cube-baremetal-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f429zi-cube-baremetal-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=2
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f429zi-cube-freertos-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f429zi-cube-freertos-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=2
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-f429zi-cube-freertos-lwip'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-f429zi-cube-freertos-lwip VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=2
+        fi
+
+  test_h743:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/stm32/nucleo-h74.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/stm32/nucleo-h743zi-make-baremetal-builtin'; then
+        make -C examples/stm32/nucleo-h743zi-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h743zi-make-freertos-builtin'; then
+          make -C examples/stm32/nucleo-h743zi-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - name: Cube
+      run: |
+        echo GO=0 >> $GITHUB_ENV
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h74.*-cube-'; then
+          echo GO=1 >> $GITHUB_ENV
+          # nothing specific to install or do
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h743zi-cube-baremetal-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-h743zi-cube-baremetal-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=6
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h743zi-cube-freertos-builtin'; then
+          make -C test/cube test PROJECTS=../../examples/stm32/nucleo-h743zi-cube-freertos-builtin VCON_API_KEY=${{secrets.VCON_API_KEY}} DEVICE=6
+        fi
+
+  test_h723:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/stm32/nucleo-h72.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/stm32/nucleo-h723zg-make-baremetal-builtin'; then
+          make -C examples/stm32/nucleo-h723zg-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h723zg-make-freertos-builtin'; then
+          make -C examples/stm32/nucleo-h723zg-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    
+  test_h5:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/stm32/nucleo-h5.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/stm32/nucleo-h563zi-make-baremetal-builtin'; then
+          make -C examples/stm32/nucleo-h563zi-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/stm32/nucleo-h563zi-make-freertos-builtin'; then
+          make -C examples/stm32/nucleo-h563zi-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_rt1020:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/nxp/rt1020.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/nxp/rt1020-evk-make-baremetal-builtin'; then
+          make -C examples/nxp/rt1020-evk-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/nxp/rt1020-evk-make-freertos-builtin'; then
+          make -C examples/nxp/rt1020-evk-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_rt1060:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/nxp/rt1060.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/nxp/rt1060-evk-make-baremetal-builtin'; then
+          make -C examples/nxp/rt1060-evk-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/nxp/rt1060-evk-make-freertos-builtin'; then
+          make -C examples/nxp/rt1060-evk-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_rt1170:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/nxp/rt1170.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/nxp/rt1170-evk-make-baremetal-builtin'; then
+          make -C examples/nxp/rt1170-evk-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/nxp/rt1170-evk-make-freertos-builtin'; then
+          make -C examples/nxp/rt1170-evk-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_ra6m4:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 3 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/renesas/ek-ra6m4.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      continue-on-error: true
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/renesas/ek-ra6m4-make-baremetal-builtin'; then
+          make -C examples/renesas/ek-ra6m4-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+#    - if: ${{ env.GO == 1 }}
+#      run: |
+#        if ./test/match_changed_files.sh 'examples/renesas/ek-ra6m4-make-freertos-builtin'; then
+#          make -C examples/renesas/ek-ra6m4-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+#        fi
+
+  test_tm4c:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/ti/ek-tm4c.*-make-" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/ti/ek-tm4c1294xl-make-baremetal-builtin'; then
+          make -C examples/ti/ek-tm4c1294xl-make-baremetal-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/ti/ek-tm4c1294xl-make-freertos-builtin'; then
+          make -C examples/ti/ek-tm4c1294xl-make-freertos-builtin test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_same54:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - name: baremetal
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/microchip/same54-xpro" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh '^src|examples/device-dashboard|examples/microchip/same54-xpro/device-dashboard'; then
+          make -C examples/microchip/same54-xpro/device-dashboard test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+    - if: ${{ env.GO == 1 }}
+      run: |
+        if ./test/match_changed_files.sh 'examples/microchip/same54-xpro/mqtt-client'; then
+          make -C examples/microchip/same54-xpro/mqtt-client test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+        fi
+
+  test_pico_w5500:
+    runs-on: ubuntu-latest
+    env:
+      GO: 0
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - name: SDK
+      run: |
+        if ./test/match_changed_files.sh "^src|examples/device-dashboard|examples/rp2040/pico-w5500" ; then
+          echo GO=1 >> $GITHUB_ENV
+          sudo apt -y update && sudo apt -y install gcc-arm-none-eabi
+        fi
+    - if: ${{ env.GO == 1 }}
+      run:  make -C examples/rp2040/pico-w5500 test VCON_API_KEY=${{secrets.VCON_API_KEY}}
+

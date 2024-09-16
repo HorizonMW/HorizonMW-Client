@@ -1,0 +1,41 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.ipch
+*.exp
+*.opensdf
+
+# Visual Studio
+*.VC.db
+*.VC.VC.opendb
+.vs/
+Debug/
+Release/
+enc_temp_folder/
+/example/qt-gui-example/build-WinToastExample-Desktop_Qt_5_9_2_MSVC2015_32bit-Debug

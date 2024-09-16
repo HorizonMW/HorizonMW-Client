@@ -1,0 +1,32 @@
+name: "CodeQL Scanning"
+# https://github.com/github/codeql-action
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # run at 2:30 AM UTC
+  # Allow manual runs
+  workflow_dispatch:
+
+env:
+  IPV6: 0
+jobs:
+  CodeQL-Build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    permissions:
+      security-events: write
+    steps:
+    - uses: actions/checkout@v3
+      with: { fetch-depth: 2 }
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+    - run: |
+        make -C test test CC=gcc ASAN= ASAN_OPTIONS=
+        ./test/setup_ga_network.sh && make -C test mip_test CC=gcc ASAN= ASAN_OPTIONS=
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2

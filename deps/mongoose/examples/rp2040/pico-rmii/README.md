@@ -1,0 +1,1 @@
+See detailed tutorial (including hardware connections) at https://mongoose.ws/tutorials/rp2040/pico-rmii/

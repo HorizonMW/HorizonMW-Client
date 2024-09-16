@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>example</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      #container { margin-right: auto; margin-left: auto; max-width: 480px; }
+      #info { background: #e0f0f0; border-radius: .5em; padding: 2em;  }
+      #wrapper { margin-top: 1em; }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="info">
+        Mongoose always buffers a full HTTP message before invoking
+        MG_EV_HTTP_MSG event. Big POST request require of lot
+        of RAM to buffer everything.
+        <br><br>
+        In order to upload large files to a memory-constrained system, use
+        <code>MG_EV_READ</code> on a server side. It fires when
+        a partial HTTP message has been received. We discourage this method,
+        since the client can send chunked-encoded data. Instead, please
+        split the upload into smaller pieces and send sequentially.
+        <br><br>
+        In this example, JavaScript code uses "fetch()" browser API.
+        Uploaded file is not saved, but rather printed by server side.
+      </div>
+      <div id="wrapper">
+        <input type="file" id="el1" style="display: none"/>
+        <button id="el2">choose file...</button>
+        <span>Selected file:</span> <span id="el4"></span> <br/>
+        <button id="el5" style="margin: 0.5em 0;" disabled>upload file</button>
+        <div id="el3" style="margin-top: 1em;"></div>
+      </div>
+    </div>
+  </body>
+  <script>
+    var f; // selected file
+
+    // When user clicks on a button, trigger file selection dialog
+    document.getElementById('el2').onclick = function(ev) {
+      document.getElementById('el1').click();
+    };
+
+    document.getElementById('el5').onclick = function(ev) {
+      var r = new FileReader();
+      r.readAsArrayBuffer(f);
+      r.onload = function() {
+        ev.target.value = '';
+        document.getElementById('el3').innerText = 'Uploading...';
+        fetch(`/upload/${encodeURIComponent(f.name)}`, {
+          method: 'POST',
+          body: r.result,
+        }).then(function(res) {
+          document.getElementById('el3').innerText = 'Uploaded ' + r.result.byteLength + ' bytes';
+        });
+      };
+    };
+
+    // If user selected a file, read it into memory and trigger sendFileData()
+    document.getElementById('el1').onchange = function(ev) {
+      f = ev.target.files[0];
+      if (!f) return;
+      document.getElementById('el4').innerText = f.name;
+      document.getElementById('el5').removeAttribute('disabled');
+    };
+
+  </script>
+</html>

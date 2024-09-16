@@ -1,0 +1,1 @@
+See detailed tutorial at https://mongoose.ws/tutorials/esp8266/http-client-server/

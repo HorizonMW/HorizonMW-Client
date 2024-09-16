@@ -1,0 +1,110 @@
+# MAKEFILE for linux GCC
+#
+# This makefile produces a shared object and requires libtool to be installed.
+#
+# Thanks to Zed Shaw for helping debug this on BSD/OSX.
+# Tom St Denis
+#
+#  (GNU make only)
+
+### USAGE:
+#
+# CFLAGS="-DUSE_LTM -DLTM_DESC -I/path/to/libtommath" make -f makefile.shared all EXTRALIBS=/path/to/libtommath/libtommath.a
+# ./test
+# make -f makefile.shared PREFIX=/opt/libtom install
+#
+
+PLATFORM := $(shell uname | sed -e 's/_.*//')
+### Observed uname outputs:
+# MINGW32_NT-6.2          (on MSYS/MINGW old)
+# MINGW64_NT-10.0-14393   (on MSYS new)
+# MSYS_NT-10.0-19042      (on MSYS2)
+# CYGWIN_NT-10.0          (on Cygwin 64bit)
+# CYGWIN_NT-6.2-WOW64     (on Cygwin 32bit)
+# Linux                   (on all Linux distros)
+# Darwin                  (on macOS, OS X)
+
+ifeq ($(LIBTOOL),rlibtool)
+  TGTLIBTOOL:=slibtool-shared
+else
+  ifndef LIBTOOL
+    ifeq ($(PLATFORM), Darwin)
+      TGTLIBTOOL:=glibtool
+    else
+      TGTLIBTOOL:=libtool
+    endif
+  else
+    TGTLIBTOOL=$(LIBTOOL)
+  endif
+endif
+
+ifneq ($(findstring $(PLATFORM),CYGWIN MINGW32 MINGW64 MSYS),)
+  NO_UNDEFINED:=-no-undefined
+endif
+
+LTCOMPILE = $(TGTLIBTOOL) --mode=compile --tag=CC $(CC)
+INSTALL_CMD = $(TGTLIBTOOL) --mode=install install
+UNINSTALL_CMD = $(TGTLIBTOOL) --mode=uninstall rm
+
+#Output filenames for various targets.
+ifndef LIBNAME
+   LIBNAME=libtomcrypt.la
+endif
+
+
+include makefile_include.mk
+
+ifneq ($(findstring -DLTM_DESC,$(LTC_CFLAGS)),)
+LTC_MPI_PROVIDERS_CFLAGS += -DLTM_DESC
+LTC_MPI_PROVIDERS_LIBS += -ltommath
+endif
+ifneq ($(findstring -DTFM_DESC,$(LTC_CFLAGS)),)
+LTC_MPI_PROVIDERS_CFLAGS += -DTFM_DESC
+LTC_MPI_PROVIDERS_LIBS += -ltfm
+endif
+ifneq ($(findstring -DGMP_DESC,$(LTC_CFLAGS)),)
+LTC_MPI_PROVIDERS_CFLAGS += -DGMP_DESC
+LTC_MPI_PROVIDERS_LIBS += -lgmp
+endif
+
+#ciphers come in two flavours... enc+dec and enc
+src/ciphers/aes/aes_enc.o: src/ciphers/aes/aes.c src/ciphers/aes/aes_tab.c
+	$(LTCOMPILE) $(LTC_CFLAGS) $(CPPFLAGS) $(LTC_LDFLAGS) -DENCRYPT_ONLY -c src/ciphers/aes/aes.c -o src/ciphers/aes/aes_enc.o
+src/ciphers/aes/aes_enc_desc.o: src/ciphers/aes/aes_desc.c
+	$(LTCOMPILE) $(LTC_CFLAGS) $(CPPFLAGS) $(LTC_LDFLAGS) -DENCRYPT_ONLY -c src/ciphers/aes/aes_desc.c -o src/ciphers/aes/aes_enc_desc.o
+
+.c.o:
+	$(LTCOMPILE) $(LTC_CFLAGS) $(CPPFLAGS) $(LTC_LDFLAGS) -o $@ -c $<
+
+LOBJECTS = $(OBJECTS:.o=.lo)
+
+$(LIBNAME): $(OBJECTS)
+	$(TGTLIBTOOL) --mode=link --tag=CC $(CC) $(LTC_LDFLAGS) $(LOBJECTS) $(EXTRALIBS) -o $@ -rpath $(LIBPATH) -version-info $(VERSION_LT) $(NO_UNDEFINED)
+
+test: $(call print-help,test,Builds the library and the 'test' application to run all self-tests) $(LIBNAME) $(TOBJECTS)
+	$(TGTLIBTOOL) --mode=link --tag=CC $(CC) $(LTC_LDFLAGS) -o $(TEST) $(TOBJECTS) $(LIBNAME) $(EXTRALIBS)
+
+# build the demos from a template
+define DEMO_template
+$(1): $(call print-help,$(1),Builds the library and the '$(1)' demo) demos/$(1).o $$(LIBNAME)
+	$$(TGTLIBTOOL) --mode=link --tag=CC $$(CC) $$(LTC_LDFLAGS) $$^ $$(EXTRALIBS) -o $(1)
+endef
+
+$(foreach demo, $(strip $(DEMOS)), $(eval $(call DEMO_template,$(demo))))
+
+install: $(call print-help,install,Installs the library + headers + pkg-config file) .common_install
+	sed -e 's,^prefix=.*,prefix=$(PREFIX),' -e 's,^Version:.*,Version: $(VERSION_PC),' -e 's,^libdir=.*,libdir=$(LIBPATH),' \
+		-e 's,^includedir=.*,includedir=$(INCPATH),' \
+		-e 's,@MPI_PROVIDERS_LIBS@,$(LTC_MPI_PROVIDERS_LIBS),' \
+		-e 's,@MPI_PROVIDERS_CFLAGS@,$(LTC_MPI_PROVIDERS_CFLAGS),' libtomcrypt.pc.in > libtomcrypt.pc
+	install -p -d $(DESTDIR)$(LIBPATH)/pkgconfig
+	install -p -m 644 libtomcrypt.pc $(DESTDIR)$(LIBPATH)/pkgconfig/
+
+install_bins: $(call print-help,install_bins,Installs the useful demos ($(USEFUL_DEMOS))) .common_install_bins
+
+uninstall: $(call print-help,uninstall,Uninstalls the library + headers + pkg-config file) .common_uninstall
+	rm $(DESTDIR)$(LIBPATH)/pkgconfig/libtomcrypt.pc
+
+# ref:         $Format:%D$
+# git commit:  $Format:%H$
+# commit time: $Format:%ai$

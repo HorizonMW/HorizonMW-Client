@@ -1,0 +1,36 @@
+name: CIFuzz
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+  # Allow manual runs
+  workflow_dispatch:
+
+jobs:
+  Fuzzing:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 2 }
+    - run: if ./test/match_changed_files.sh '^src/' ; then echo GO=1 >> $GITHUB_ENV ; fi
+    - name: Build Fuzzers
+      id: build
+      if: ${{ env.GO == 1 }}
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      with:
+        oss-fuzz-project-name: 'mongoose'
+        dry-run: false
+        language: c++
+    - name: Run Fuzzers
+      if: ${{ env.GO == 1 }}
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      with:
+        oss-fuzz-project-name: 'mongoose'
+        fuzz-seconds: 600
+        dry-run: false
+        language: c++
+    - name: Upload Crash
+      uses: actions/upload-artifact@v1
+      if: env.GO == 1 && failure() && steps.build.outcome == 'success'
+      with:
+        name: artifacts
+        path: ./out/artifacts

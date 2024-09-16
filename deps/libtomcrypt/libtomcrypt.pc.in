@@ -1,0 +1,9 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@/@PROJECT_NAME@
+
+Name: LibTomCrypt
+Description: public domain open source cryptographic toolkit
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -ltomcrypt @MPI_PROVIDERS_LIBS@
+Cflags: -I${includedir} @MPI_PROVIDERS_CFLAGS@
