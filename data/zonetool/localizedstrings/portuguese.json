@@ -1,0 +1,23 @@
+{
+    "LUA_MENU_SERVERLIST": "Lista de servidores",
+    "PLATFORM_SYSTEM_LINK_TITLE": "LISTA DE SERVIDORES",
+    "MENU_NUMPLAYERS": "Jogadores",
+    "MENU_PING": "Ping",
+    "LOCALE_ENGLISH": "Inglês",
+    "LOCALE_ENGLISH_SAFE": "Inglês (Censurado)",
+    "LOCALE_FRENCH": "Français",
+    "LOCALE_GERMAN": "Alemão",
+    "LOCALE_ITALIAN": "Italiano",
+    "LOCALE_JAPANESE_PARTIAL": "Japonês (Parcial)",
+    "LOCALE_KOREAN": "Coreano",
+    "LOCALE_POLISH": "Polonês",
+    "LOCALE_PORTUGUESE": "Português",
+    "LOCALE_RUSSIAN": "Russo",
+    "LOCALE_SIMPLIFIED_CHINESE": "Chinês simplificado",
+    "LOCALE_SPANISH": "Español",
+    "LOCALE_TRADITIONAL_CHINESE": "Chinês tradicional",
+    "MENU_QUIT_TO_DESKTOP": "Sair para a área de trabalho",
+
+    "LUA_MENU_CAMPAIGN_UNLOCKED_ALL_TITLE": "Desbloquear todas as missões",
+    "LUA_MENU_CANCEL_UNLOCK_CAPS": "Cancelar desbloqueio"
+}
