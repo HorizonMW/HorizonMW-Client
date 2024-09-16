@@ -270,7 +270,8 @@ namespace hmw_voice_chat {
 			client->lastPacketTime = *game::svs_time;
 			if (client->header.state < game::CS_ACTIVE)
 			{
-				sv_pre_game_user_voice(client, msg);
+				//TODO: Fix this post-release
+				//sv_pre_game_user_voice(client, msg);
 			}
 			else
 			{
