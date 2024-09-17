@@ -396,9 +396,7 @@ namespace fastfiles
 
 			weapon::clear_modifed_enums();
 			try_load_zone("h2m_pre_gfx", true);
-#ifndef DEBUG
 			try_load_zone("h2m_files", false);
-#endif // !DEBUG
 
 
 			game::DB_LoadXAssets(data.data(), static_cast<std::uint32_t>(data.size()), syncMode);
