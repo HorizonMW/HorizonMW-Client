@@ -62,6 +62,11 @@
 
 #ifdef DEBUG
 //#define DW_DEBUG
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <backends/imgui_impl_dx11.h>
+#include <backends/imgui_impl_win32.h>
+#include <misc/cpp/imgui_stdlib.h>
 #endif
 
 #define MSG_BOX_INFO(message) MessageBoxA(nullptr, message, "h2m-mod: INFORMATION", MB_ICONINFORMATION);

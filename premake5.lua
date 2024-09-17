@@ -219,7 +219,7 @@ newaction {
 
 dependencies.load()
 
-workspace "h1-mod"
+workspace "h2m-mod"
 startproject "client"
 location "./build"
 objdir "%{wks.location}/obj"
@@ -286,7 +286,7 @@ language "C++"
 
 files {"./src/runner/**.rc", "./src/runner/**.hpp", "./src/runner/**.cpp", "./src/runner/resources/**.*"}
 
-includedirs {"./src/runner", "./src/common", "%{prj.location}/src"}
+includedirs {"./src/client", "./src/common", "%{prj.location}/src", "./deps/mongoose"}
 
 resincludedirs {"$(ProjectDir)src"}
 
@@ -298,7 +298,7 @@ project "client"
 kind "ConsoleApp"
 language "C++"
 
-targetname "h1-mod"
+targetname "h2m-mod"
 
 pchheader "std_include.hpp"
 pchsource "src/client/std_include.cpp"
