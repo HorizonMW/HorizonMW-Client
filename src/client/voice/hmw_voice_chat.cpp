@@ -51,7 +51,7 @@ namespace hmw_voice_chat {
 
 		bool sv_voice_all_enabled()
 		{
-			return (sv_voice_team && sv_voice_team->current.enabled);
+			return (sv_voice_all && sv_voice_all->current.enabled);
 		}
 
 		bool sv_voice_deathchat_enabled()
