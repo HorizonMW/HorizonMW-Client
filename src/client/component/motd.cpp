@@ -125,7 +125,7 @@ namespace motd
 			map =
 			{
 				{"discord", "https://discord.gg/horizonmw"},
-				{"website", "https://h2m-mod.dev"},
+				{"website", "https://www.youtube.com/@horizonmw"},
 			};
 		}
 
