@@ -971,7 +971,8 @@ namespace server_list
 			std::string bots = game_server_response_json["bots"];
 			server.bots = atoi(bots.c_str());
 
-			server.ping = std::atoi(ping.c_str());
+			int latency = std::atoi(ping.c_str());
+			server.ping = latency >= 999 ? 999 : latency; // Cap latency display to 999
 
 			std::string isPrivate = game_server_response_json["isPrivate"];
 			server.is_private = atoi(isPrivate.c_str()) == 1;
