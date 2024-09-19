@@ -22,21 +22,22 @@ namespace clantags
 				return lui_pushplayername_hook.invoke<__int64>(state, localClientNumber, entityNumber);
 			}
 
-			unsigned __int8* v7;
-			unsigned __int8* v10;
+			char* v7;
 			const char* v11;
 			DWORD* v12;
 			const char* a4;
 
-			v10 = (unsigned __int8*)(game::getCGArray() + 0x70 * entityNumber + 0x174DA8);
-			v11 = (char*)v10 + 52;
-			if (v10[52] && !v10[76])
-				goto LABEL_12;
-			v11 = (char*)v10 + 77;
+			auto* bgs_clientinfo_array = reinterpret_cast<game::clientInfo_t*>(reinterpret_cast<uintptr_t>(game::getCGArray()) + 0x174DA8);
+			auto* clientinfo = &bgs_clientinfo_array[entityNumber];
 
-			if (v10[77])
+			v11 = clientinfo->clanAbbrev;
+			if (clientinfo->clanAbbrev[0] && !clientinfo->use_elite_clan_tag)
+				goto LABEL_12;
+			v11 = clientinfo->elite_clan_tag_text;
+
+			if (clientinfo->elite_clan_tag_text[0])
 			{
-				switch (v10[76])
+				switch (clientinfo->use_elite_clan_tag)
 				{
 				case 1:
 				LABEL_12:
@@ -48,19 +49,19 @@ namespace clantags
 						}
 					}
 
-					a4 = utils::string::va("[%s]%s", v11, v10 + 1);
+					a4 = utils::string::va("[%s]%s", v11, clientinfo->name);
 				LABEL_5:
-					v7 = (unsigned __int8*)a4;
+					v7 = (char*)a4;
 					goto LABEL_6;
 				case 2:
-					a4 = utils::string::va("[^3%s^7]%s", v11, v10 + 1);
+					a4 = utils::string::va("[^3%s^7]%s", v11, clientinfo->name);
 					goto LABEL_5;
 				case 3:
-					a4 = utils::string::va("[^1%s^7]%s", v11, v10 + 1);
+					a4 = utils::string::va("[^1%s^7]%s", v11, clientinfo->name);
 					goto LABEL_5;
 				}
 			}
-			v7 = v10 + 1;
+			v7 = clientinfo->name;
 			if (!v7)
 			{
 				v12 = *(DWORD**)(state + 72);

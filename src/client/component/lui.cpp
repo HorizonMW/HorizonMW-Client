@@ -86,6 +86,11 @@ namespace lui
 			utils::hook::set<uint32_t>(0x27F9E9_b - 4, max_frontend_memory);
 			utils::hook::set<uint32_t>(0x27FA84_b - 4, max_frontend_memory);
 
+			// increase max ingame memory (for maps only)
+			const auto max_ingame_memory = 0x120000 * 4;
+			utils::hook::set<uint32_t>(0x27FA26_b - 4, max_ingame_memory); // segment size
+			utils::hook::set<uint32_t>(0x278F48_b - 4, max_ingame_memory); // alloc size
+
 			command::add("lui_open", [](const command::params& params)
 			{
 				if (params.size() <= 1)

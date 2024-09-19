@@ -472,7 +472,7 @@ namespace experimental
 
 			game::vec3_t origin{};
 			const auto client = game::g_entities[0].client;
-			const auto angles = client->angles;
+			const auto angles = client->ps.viewangles;
 			utils::hook::invoke<void>(0x4057F0_b, client, origin); // G_GetPlayerViewOrigin
 
 			game::vec3_t forward{};

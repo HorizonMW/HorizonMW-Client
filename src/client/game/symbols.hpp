@@ -28,6 +28,10 @@ namespace game
 	WEAK symbol<bool(DDLContext* ddlContext, int controller, int, int statsGroup)> CL_PlayerData_GetDDLBuffer{0x6FC50};
 	WEAK symbol<bool(int localClient, ScreenPlacement* scrPlace, vec3_t& WorldLocation, vec2_t& Screen)> CG_WorldPosToScreenPosReal{ 0x307AD0 };
 	WEAK symbol<int(const char* perkName)> BG_GetPerkCodeIndexForName{ 0x2C6270 };
+	WEAK symbol<int(playerState_s* ps)> BG_PlayerLastWeaponHand{ 0x2E95F0 };
+	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintInTime{ 0x2EB640 };
+	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintOutTime{ 0x2EB640 };
+	WEAK symbol<void(playerState_s* ps, PlayerHandIndex hand)> PM_SetReloadingState{ 0x2D66D0 };
 
 	WEAK symbol<GfxScene> scene{ 0x33E4290 };
 	WEAK symbol<void(int a1)> CL_VirtualLobbyShutdown{ 0x13C9C0 };
@@ -353,7 +357,7 @@ namespace game
 	WEAK symbol<void*(jmp_buf* Buf, int Value)> longjmp{0x826710};
 	WEAK symbol<int(jmp_buf* Buf)> _setjmp{0x8A3190};
 
-	WEAK symbol<__int64()> getCGArray{0x5CB80};
+	WEAK symbol<game::cg_s*()> getCGArray{0x5CB80};
 
 	WEAK symbol<void(int localClientNumber, const char* caller)> LiveStorage_EnsureMaySetPersistentData{ 0x19C2F0 };
 	WEAK symbol<DDLState*(DDLState* result, const DDLDef* ddlDef)> DDL_GetRoot{ 0x7938A0 };
@@ -478,6 +482,12 @@ namespace game
 	WEAK symbol<char[8]> clanName{0x3920896};
 
 	WEAK symbol<void*> sessionData{0x3426D20};
+
+	WEAK symbol<SessionData> g_serverSession{ 0xB807260 };
+
+	WEAK symbol<int[18]> s_clientTalkTime{ 0xC9DD1B0 };
+
+	WEAK game::symbol<int> cl_maxLocalClients{ 0x2E6EE30 };
 
 	namespace hks
 	{

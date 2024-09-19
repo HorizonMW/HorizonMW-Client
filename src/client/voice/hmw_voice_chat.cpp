@@ -26,11 +26,20 @@ namespace hmw_voice_chat {
 		bool s_playerMute[MAX_CLIENTS];
 		int s_clientTalkTime[MAX_CLIENTS];
 
+		int saved_talking_client = 0;
+
 		game::dvar_t* sv_voice = nullptr;
 		game::dvar_t* sv_voice_team = nullptr;
 		game::dvar_t* sv_voice_death_chat = nullptr;
 		game::dvar_t* sv_voice_intermission = nullptr;
 		game::dvar_t* sv_voice_all = nullptr;
+
+		utils::hook::detour cl_write_voice_packet_hook;
+		utils::hook::detour cl_is_player_talking_hook;
+		utils::hook::detour ui_get_talker_client_num_hook;
+		utils::hook::detour client_disconnect_hook;
+		utils::hook::detour update_user_session_hook;
+		utils::hook::detour session_is_user_registered_hook;
 	}
 
 #ifdef DEBUG
@@ -352,7 +361,6 @@ namespace hmw_voice_chat {
 			std::memset(mute_list, 0, sizeof(mute_list));
 		}
 
-		utils::hook::detour cl_write_voice_packet_hook;
 		void cl_write_voice_packet_stub(const int local_client_num)
 		{
 			if (!game::CL_IsCgameInitialized() || game::VirtualLobby_Loaded() || !cl_voice_enabled())
@@ -386,9 +394,13 @@ namespace hmw_voice_chat {
 			game::NET_OutOfBandVoiceData(clc->netchan.sock, const_cast<game::netadr_s*>(&clc->serverAddress), msg.data, msg.cursize);
 		}
 	
-		int saved_talking_client = 0;
 		bool is_player_talking(int client_num)
 		{
+			if (client_num >= MAX_CLIENTS || client_num < 0)
+			{
+				return false;
+			}
+
 			auto current_time = game::Sys_Milliseconds();
 			auto client_talk_time = s_clientTalkTime[client_num];
 			if (!client_talk_time)
@@ -400,27 +412,18 @@ namespace hmw_voice_chat {
 			return res;
 		}
 
-		WEAK game::symbol<int[18]> s_clientTalkTime{ 0xC9DD1B0 };
-
-		utils::hook::detour cl_is_player_talking_hook;
-		bool cl_is_player_talking_stub(void* a1, const int talking_client_index)
+		bool cl_is_player_talking_stub(void* session, int client_num)
 		{
-			auto current_ms = game::Sys_Milliseconds();
-			auto client_talk_time = *s_clientTalkTime[talking_client_index];
-			auto client_is_talking_time = (current_ms - client_talk_time);
-			if (client_is_talking_time < 300 && client_is_talking_time >= 0)
-			{
-				return true;
-			}
-
-			return false;
+			return is_player_talking(client_num);
 		}
 
-		struct SessionData {};
-		WEAK game::symbol<SessionData> g_serverSession{ 0xB807260 };
-		WEAK game::symbol<int> cl_maxLocalClients{ 0x2E6EE30 };
+		bool voice_is_xuid_talking_stub(void* session, uint64_t xuid)
+		{
+			// Patoke @note: use saved_talking_client so we don't rely on the session and xuid which might not be populated
+			return is_player_talking(saved_talking_client);
+		}
 
-		utils::hook::detour ui_get_talker_client_num_hook;
+		// Patoke @note: unused
 		int ui_get_talker_client_num_stub(__int64 a1, int a2)
 		{
 			auto idek = 0;
@@ -429,12 +432,12 @@ namespace hmw_voice_chat {
 			auto num_of_players = get_num_of_players();
 			while (1)
 			{
-				auto server_sess = &(*g_serverSession);
+				auto server_sess = &(*game::g_serverSession);
 
 				[[maybe_unused]] auto is_user_registered = true; //utils::hook::invoke<bool>(0x56B5C0_b, server_sess, current_client_index);
 				auto is_player_talking = utils::hook::invoke<bool>(0x135950_b, server_sess, current_client_index);
 
-				auto v5 = *cl_maxLocalClients;
+				auto v5 = *game::cl_maxLocalClients;
 				for (auto i = 0; i < v5; ++i)
 				{
 					if (**(&game::keyCatchers + 1) > 8)            // wtf
@@ -442,7 +445,7 @@ namespace hmw_voice_chat {
 						if (utils::hook::invoke<__int64>(0x3162D0_b) == current_client_index)
 							goto increment_and_check;
 
-						v5 = *cl_maxLocalClients;
+						v5 = *game::cl_maxLocalClients;
 					}
 				}
 
@@ -560,13 +563,11 @@ namespace hmw_voice_chat {
 			}
 		}
 
-		utils::hook::detour client_disconnect_hook;
 		void client_disconnect_stub(__int64 client_num, const char* a2)
 		{
 			client_disconnect_hook.invoke<void>(client_num, a2);
 		}
 
-		utils::hook::detour update_user_session_hook;
 		void update_user_session_stub(game::client_t* cl_)
 		{
 			update_user_session_hook.invoke<void>(cl_);
@@ -577,20 +578,35 @@ namespace hmw_voice_chat {
 			return utils::hook::invoke<int>(0x5AF5F0_b, a1, "v");
 		}
 
-		utils::hook::detour session_is_user_registered_hook;
+		// Patoke @note: skip user registered checks related to voice chat
 		bool session_is_user_registered_stub(void* session, int client_num)
 		{
 			auto ret = reinterpret_cast<uintptr_t>(_ReturnAddress());
 			// also should check cl_is_player_talking, but that's completely overwritten by one of our hooks
-			if (ret == 0x1E0991_b || ret == 0x1E0481_b)
+			if (ret == 0x1E0991_b ||// UI_IsClientTalking
+				ret == 0x1E0481_b)	// UI_GetTalkerClientNum
 			{
-				Client::saved_talking_client = client_num;
+				// save client number, that way we don't need to get it thru their xuid
+				saved_talking_client = client_num;
+				return true;
+			}
+
+			// stop mute functions from not proceeding if a player doesn't have a registered session
+			if (ret == 0x12E607_b ||// CL_CopyPlayerMutes
+				ret == 0x1388DB_b ||// CL_MuteAllPlayers
+				ret == 0x13896B_b ||// CL_MuteAllPlayersButFriends
+				ret == 0x1389EB_b ||// CL_MuteAllPlayersButParty
+				ret == 0x13B9AB_b ||// CL_UnmuteAllPlayers
+				ret == 0x13BA1B_b ||// CL_UnmuteAllPlayersButFriends
+				ret == 0x13BA9B_b)	// CL_UnmuteAllPlayersButParty
+			{
 				return true;
 			}
 
 			return session_is_user_registered_hook.invoke<bool>(session, client_num);
 		}
 
+		// Patoke @note: allow us to modify mute states from the mute players menu
 		bool cl_can_change_player_mute_stub(void* session, int client_num)
 		{
 			return true;
@@ -605,21 +621,24 @@ namespace hmw_voice_chat {
 		hmw_voice_chat::Client::cl_clear_muted_list();
 
 		//events::on_steam_disconnect(cl_clear_muted_list);
-		Client::client_disconnect_hook.create(0x404730_b, Client::client_disconnect_stub);
-
+		client_disconnect_hook.create(0x404730_b, Client::client_disconnect_stub);
 
 		// write voice packets to server instead of other clients
-		Client::cl_write_voice_packet_hook.create(0x13DB10_b, Client::cl_write_voice_packet_stub);
+		cl_write_voice_packet_hook.create(0x13DB10_b, Client::cl_write_voice_packet_stub);
 
 		// disable 'v' OOB handler and use our own
 		utils::hook::set<std::uint8_t>(0x12F2AD_b, 0xEB);
 		network::on_raw("v", Client::cl_voice_packet);
 
-		Client::session_is_user_registered_hook.create(0x56B5C0_b, Client::session_is_user_registered_stub);
 		if (!game::environment::is_dedi())
 		{
-			Client::cl_is_player_talking_hook.create(0x135950_b, Client::cl_is_player_talking_stub);
-			Client::ui_get_talker_client_num_hook.create(0x1E0420_b, Client::ui_get_talker_client_num_stub);
+			session_is_user_registered_hook.create(0x56B5C0_b, Client::session_is_user_registered_stub);
+			utils::hook::jump(0x135950_b, Client::cl_is_player_talking_stub, true);
+			utils::hook::jump(0x5BF7F0_b, Client::voice_is_xuid_talking_stub, true);
+			
+			// Patoke @note: unused hooks
+			//Client::cl_is_player_talking_hook.create(0x135950_b, Client::cl_is_player_talking_stub);
+			//Client::ui_get_talker_client_num_hook.create(0x1E0420_b, Client::ui_get_talker_client_num_stub);
 		}
 		utils::hook::jump(0x1358B0_b, Client::cl_is_player_muted_stub, true);
 		utils::hook::jump(0x12C6D0_b, Client::cl_can_change_player_mute_stub, true);

@@ -16,39 +16,42 @@ namespace thirdperson
 		game::dvar_t* cg_thirdPersonRange = nullptr;
 		game::dvar_t* cg_thirdPersonAngle = nullptr;
 
-		__int64 sub_1D5950_stub([[maybe_unused]] int local_client_num, game::cg_s* a2)
+		int update_third_person_stub(int local_client_num, game::cg_s* cgame_glob)
 		{
-			auto next_snap = a2->nextSnap;
+			auto next_snap = cgame_glob->nextSnap;
 			if (next_snap->ps.pm_type < 7u)
 			{
 				int link_flags = next_snap->ps.linkFlags;
 				if ((link_flags & 2) == 0 && (next_snap->ps.otherFlags & 4) == 0)
 				{
-					auto client_globals = a2;
-					if (!client_globals->unk_979676 || !client_globals->unk_979696)
+					auto client_globals = cgame_glob;
+					if (!client_globals->inKillCam || client_globals->killCamEntityType == game::KC_NO_ENTITY)
 					{
 						if (cg_thirdPerson && cg_thirdPerson->current.enabled)
 						{
 							return 1;
 						}
 
-						if (!(link_flags & (1 << 0xE)) || client_globals->unk_979696)
+						if (!(link_flags & (1 << 0xE)) || client_globals->killCamEntityType != game::KC_NO_ENTITY)
 							return (link_flags >> 27) & 1;
 						if (link_flags & (1 << 0x1D))
 							return 0;
 						if (!(link_flags & (1 << 0x1C)))
-							return a2->unk_601088;
+							return cgame_glob->spectatingThirdPerson;
 					}
 				}
 			}
 			return 1;
 		}
 
-		void sub_10C280_stub(int local_client_num, float angle, float range, int a4, int a5, int a6, int a7)
+		void cg_offset_third_person_view_internal_stub(int local_client_num, float third_person_angle, float third_person_range, 
+			const int third_person_no_yaw, const int third_person_no_pitch,
+			const int limit_pitch_angles, const int look_at_killer)
 		{
-			angle = cg_thirdPersonAngle->current.value;
-			range = cg_thirdPersonRange->current.value;
-			utils::hook::invoke<void>(0x10C280_b, local_client_num, angle, range, a4, a5, a6, a7);
+			third_person_angle = cg_thirdPersonAngle->current.value;
+			third_person_range = cg_thirdPersonRange->current.value;
+			utils::hook::invoke<void>(0x10C280_b, local_client_num, third_person_angle, third_person_range, 
+				third_person_no_yaw, third_person_no_pitch, limit_pitch_angles, look_at_killer);
 		}
 		
 	}
@@ -72,8 +75,8 @@ namespace thirdperson
 					"The range of the camera from the player in third person view");
 			}, scheduler::main);
 
-			utils::hook::jump(0x1D5950_b, sub_1D5950_stub);
-			utils::hook::call(0x10C26B_b, sub_10C280_stub);
+			utils::hook::jump(0x1D5950_b, update_third_person_stub);
+			utils::hook::call(0x10C26B_b, cg_offset_third_person_view_internal_stub);
 		}
 	};
 }

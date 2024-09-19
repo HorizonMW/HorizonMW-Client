@@ -185,16 +185,175 @@ namespace movement
 			pm_try_playermove(pm, pml);
 		}
 
+
+		// @credits: https://github.com/REVLIIS/IW4-mechanics-for-H2M
+		bool check_for_righty_tighty(game::pmove_t* pm)
+		{
+			if ((pm->oldcmd.buttons & game::BUTTON_USERELOAD) == 0 && ((pm->cmd.buttons & game::BUTTON_USERELOAD) != 0) ||
+				((pm->oldcmd.buttons & game::BUTTON_RELOAD) == 0 && ((pm->cmd.buttons & game::BUTTON_RELOAD) != 0)))
+			{
+				if ((pm->ps->sprintState.lastSprintEnd - pm->ps->sprintState.lastSprintStart) < 50) //Increase to make righty tighty easier
+				{
+					if (game::PM_Weapon_AllowReload(pm->ps, game::WEAPON_HAND_RIGHT) && !game::PM_Weapon_AllowReload(pm->ps, game::WEAPON_HAND_LEFT))
+					{
+						game::PM_SetReloadingState(pm->ps, game::WEAPON_HAND_RIGHT);
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		bool check_for_wrist_twist(game::pmove_t* pm)
+		{
+			if ((pm->cmd.buttons & game::BUTTON_USERELOAD) == 0 && ((pm->oldcmd.buttons & game::BUTTON_USERELOAD) != 0) ||
+				(pm->cmd.buttons & game::BUTTON_RELOAD) == 0 && ((pm->oldcmd.buttons & game::BUTTON_RELOAD) != 0))
+			{
+				//if we are allowed to reload our left gun, and NOT allowed to reload right gun, start wrist twist
+				if (game::PM_Weapon_AllowReload(pm->ps, game::WEAPON_HAND_LEFT) && !game::PM_Weapon_AllowReload(pm->ps, game::WEAPON_HAND_RIGHT))
+				{
+					game::PM_SetReloadingState(pm->ps, game::WEAPON_HAND_LEFT);
+					pm->ps->torsoAnim = 3181; //reload anim, overrides the reset in BG_ClearReloadAnim, makes it so the sprint anim is shown on 3rd person character 
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		void sprint_drop(game::pmove_t* pm)
+		{
+			game::playerState_s* ps = pm->ps;
+
+			int handIndex = game::BG_PlayerLastWeaponHand(ps);
+
+			for (int i = 0; i <= handIndex; i++)
+			{
+				if (i == game::WEAPON_HAND_LEFT && check_for_righty_tighty(pm)) 
+				{
+					continue;
+				}
+
+				ps->weapState[i].weaponState = game::WEAPON_SPRINT_DROP;
+				ps->weapState[i].weaponTime = game::BG_SprintOutTime(ps->weapCommon.weapon, false, ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT);
+				ps->weapState[i].weaponDelay = 0;
+
+				if ((BYTE)ps->pm_type < 7u)
+				{
+					ps->weapState[i].weapAnim = (game::WEAP_ANIM_SPEED_RELOAD | (ps->weapState[i].weaponState) & ANIM_TOGGLEBIT);
+				}
+			}
+		}
+
+		void sprint_raise(game::pmove_t* pm)
+		{
+			game::playerState_s* ps = pm->ps;
+			int handIndex = game::BG_PlayerLastWeaponHand(ps);
+
+			for (int i = 0; i <= handIndex; i++)
+			{
+				ps->weapState[i].weaponState = game::WEAPON_SPRINT_RAISE;
+				ps->weapState[i].weaponTime = game::BG_SprintInTime(ps->weapCommon.weapon, false, ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT);
+				ps->weapState[i].weaponDelay = 0;
+
+				if ((BYTE)ps->pm_flags < 7u)
+					ps->weapState[i].weapAnim = (ps->weapState[i].weaponState) & 0x800 | 0x1Fu;
+
+				if (ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT)
+				{
+					if (i == game::WEAPON_HAND_RIGHT)
+					{
+						check_for_righty_tighty(pm);
+					}
+					else if (i == game::WEAPON_HAND_LEFT)
+					{
+						check_for_wrist_twist(pm);
+					}
+				}
+			}
+		}
+
+		//reversed from iw4
+		utils::hook::detour pm_weapon_check_for_sprint_hook;
+		void pm_weapon_check_for_sprint_stub(game::pmove_t* pm)
+		{
+			if (!pm->cmd.weapon.data) 
+			{
+				return;
+			}
+
+			int weaponStateRight = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weaponState;
+			int weaponStateLeft = pm->ps->weapState[game::WEAPON_HAND_LEFT].weaponState;
+
+			if (weaponStateRight != game::WEAPON_FIRING && weaponStateRight != game::WEAPON_RECHAMBERING && weaponStateRight != game::WEAPON_MELEE_WAIT_FOR_RESULT && weaponStateRight != game::WEAPON_MELEE_FIRE && weaponStateRight != game::WEAPON_MELEE_END)
+			{
+				if (weaponStateLeft != game::WEAPON_FIRING && weaponStateLeft != game::WEAPON_RECHAMBERING
+					&& weaponStateLeft != game::WEAPON_MELEE_WAIT_FOR_RESULT && weaponStateLeft != game::WEAPON_MELEE_FIRE && weaponStateLeft != game::WEAPON_MELEE_END
+					&& weaponStateRight != game::WEAPON_RAISING && weaponStateRight != game::WEAPON_RAISING_ALTSWITCH
+					&& weaponStateRight != game::WEAPON_DROPPING && weaponStateRight != game::WEAPON_DROPPING_QUICK && weaponStateRight != game::WEAPON_DROPPING_ALT
+					&& weaponStateRight != game::WEAPON_OFFHAND_INIT && weaponStateRight != game::WEAPON_OFFHAND_PREPARE && weaponStateRight != game::WEAPON_OFFHAND_HOLD && weaponStateRight != game::WEAPON_OFFHAND_HOLD_PRIMED && weaponStateRight != game::WEAPON_OFFHAND_END
+					)
+				{
+					// 0x40 = PM_FLAG_SPRINTING
+					if (((pm->ps->pm_flags & 0x40) != 0) && (weaponStateRight != game::WEAPON_SPRINT_RAISE && weaponStateRight != game::WEAPON_SPRINT_LOOP && weaponStateRight != game::WEAPON_SPRINT_DROP))
+					{
+						sprint_raise(pm);
+					}
+					else if (((pm->ps->pm_flags & 0x40) == 0) && (weaponStateRight == game::WEAPON_SPRINT_RAISE || weaponStateRight == game::WEAPON_SPRINT_LOOP))
+					{
+						sprint_drop(pm);
+					}
+				}
+			}
+		}
+
+		/*
+			This detour fixes an issue when you're on servers and trying to wrist twist with +usereload
+			I added an additional check to see if you're pressing the usereload button when the sprint raise event is happening,
+			so if your connection isn't perfect you dont stop halfway trough a wrist twist
+			Not fully reversed yet, but wasn't needed for v1.0.0.
+		*/
+		utils::hook::detour pm_sprint_ending_buttons_hook;
+		bool pm_sprint_ending_buttons_stub(game::playerState_s* ps, int8_t forwardSpeed, int buttons)
+		{
+			if ((ps->pm_flags & 0x8018) != 0 || forwardSpeed <= 105)
+			{
+				return true;
+			}
+
+			int v5 = ps->perkSlots[1] & 1;
+			int v6 = (0xCF0D - (v5 != 0)) & 0xFFFFFDCF | 0x30;
+
+			if ((ps->perks[1] & 0x40000000) == 0)
+				v6 = (0xCF0D - (v5 != 0)) | 0x30;
+
+			int weaponState = ps->weapState[0].weaponState;
+
+			if ((v6 & buttons) != 0)
+			{
+				if (ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT && (buttons & game::BUTTON_USERELOAD) == 0 && weaponState == game::WEAPON_SPRINT_RAISE) //+usereload high ping fix
+					return false;
+
+				return true;
+			}
+
+			bool is_in_melee_or_nade_throw = (weaponState - game::WEAPON_MELEE_WAIT_FOR_RESULT) <= game::WEAPON_OFFHAND_END;
+			bool is_in_nightvision_equip = (weaponState - game::WEAPON_NIGHTVISION_WEAR) <= game::WEAPON_NIGHTVISION_REMOVE;
+			bool is_in_blast_or_hybrid_scope = (weaponState - game::WEAPON_BLAST_IMPACT) <= game::WEAPON_HYBRID_SIGHT_OUT;
+
+			return is_in_melee_or_nade_throw || is_in_nightvision_equip || is_in_blast_or_hybrid_scope;
+		}
+
 		utils::hook::detour begin_weapon_change_hook;
 		void begin_weapon_change_stub(game::pmove_t* pm, game::Weapon new_weap, bool is_new_alt, bool quick, unsigned int* holdrand)
 		{
 			auto keep_anim = false;
 
-			auto anim = pm->ps->weaponState[0x0].weapAnim;
-			auto anim_two = pm->ps->weaponState[0x1].weapAnim;
+			auto anim = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim;
+			auto anim_two = pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim;
 
-			auto* ps = reinterpret_cast<game::playerState_s_SprintState*>(pm->ps);
-			auto should_stall = (ps->sprintState.lastSprintStart > ps->sprintState.lastSprintEnd);
+			auto should_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
 			if (should_stall)
 			{
 				keep_anim = true;
@@ -204,31 +363,34 @@ namespace movement
 
 			if (keep_anim)
 			{
-				pm->ps->weaponState[0x0].weapAnim = anim;
-				pm->ps->weaponState[0x1].weapAnim = anim_two;
+				pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim = anim;
+				pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim = anim_two;
 			}
 		}
 
 		inline bool is_previous_anim(int anim)
 		{
-			return (anim == 1 || anim == 31 || anim == 2049 || anim == 2079);
+			return	(anim == game::WEAP_ANIM_IDLE || anim == game::WEAP_ANIM_FAST_RELOAD_END ||
+					anim == (game::WEAP_ANIM_IDLE | ANIM_TOGGLEBIT) || anim == (game::WEAP_ANIM_FAST_RELOAD_END | ANIM_TOGGLEBIT));
 		}
 
 		utils::hook::detour start_weapon_anim_hook;
-		void start_weapon_anim_stub(int local_client_num, int a2, int hand, unsigned int next_anim, unsigned int anim, float transition_time)
+		void start_weapon_anim_stub(uint64_t local_client_num, game::Weapon weapon_idx, game::PlayerHandIndex player_hand_idx,
+			game::weapAnimFiles_t blend_in_anim_index, game::weapAnimFiles_t blend_out_anim_index, float anim_length)
 		{
-			auto* cg_array = reinterpret_cast<game::cg_s_ps*>(game::getCGArray());
+			auto* cg_array = game::getCGArray();
 			auto* playerstate = &cg_array[local_client_num].predictedPlayerState;
 
 			auto should_sprint = (playerstate->sprintState.lastSprintStart < playerstate->sprintState.lastSprintEnd);
 
-			if ((anim == 49 || anim == 52) && is_previous_anim(playerstate->weaponState[hand].weapAnim) && should_sprint)
+			if ((blend_out_anim_index == game::WEAP_ANIM_SPRINT_IN || blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP) 
+				&& is_previous_anim(playerstate->weapState[player_hand_idx].weapAnim) && should_sprint)
 			{
-				anim = 44;
-				transition_time = 0.5f;
+				blend_out_anim_index = game::WEAP_ANIM_QUICK_DROP;
+				anim_length = 0.5f;
 			}
 
-			start_weapon_anim_hook.invoke<void>(local_client_num, a2, hand, next_anim, anim, transition_time);
+			start_weapon_anim_hook.invoke<void>(local_client_num, weapon_idx, player_hand_idx, blend_in_anim_index, blend_out_anim_index, anim_length);
 		}
 	}
 
@@ -260,6 +422,10 @@ namespace movement
 			// glides (thank you @girlmachinery for the help on this)
 			start_weapon_anim_hook.create(0x1D5CA0_b, start_weapon_anim_stub);
 
+			// Patoke @todo: adapt these properly for h2m
+			//pm_weapon_check_for_sprint_hook.create(0x2D9A10_b, pm_weapon_check_for_sprint_stub);
+			//pm_sprint_ending_buttons_hook.create(0x2CEE40_b, pm_sprint_ending_buttons_stub);
+
 			// force_play_weap_anim(anim_id, both_hands)
 			gsc::method::add("force_play_weap_anim", [](const game::scr_entref_t ent, const gsc::function_args& args)
 			{
@@ -276,9 +442,9 @@ namespace movement
 
 				auto anim_id = args[0].as<int>();
 
-				client->weaponState[0].weapAnim = anim_id;
+				client->ps.weapState[game::WEAPON_HAND_RIGHT].weapAnim = anim_id;
 				if (args[1].as<int>())
-					client->weaponState[1].weapAnim = anim_id;
+					client->ps.weapState[game::WEAPON_HAND_LEFT].weapAnim = anim_id;
 
 				return scripting::script_value{};
 			});

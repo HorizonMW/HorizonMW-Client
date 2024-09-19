@@ -1222,6 +1222,13 @@ namespace game
 		PMEM_SOURCE_UNK7 = 0x7,
 		PMEM_SOURCE_UNK8 = 0x8,
 		PMEM_SOURCE_CUSTOMIZATION = 0x9,
+	}; 
+	
+	enum DemoType : std::int32_t
+	{
+		DEMO_TYPE_NONE = 0x0,
+		DEMO_TYPE_CLIENT = 0x1,
+		DEMO_TYPE_SERVER = 0x2,
 	};
 
 	struct PhysicalMemoryAllocation
@@ -1250,6 +1257,31 @@ namespace game
 		PhysicalMemoryPrim prim[2];
 	}; static_assert(sizeof(PhysicalMemory) == 0xA60);
 
+	struct __declspec(align(4)) ammoindex_t
+	{
+		int ammoIndex;
+		bool isAlternate;
+	};
+
+	struct __declspec(align(4)) clipindex_t
+	{
+		int clipIndex;
+		bool isAlternate;
+	};
+
+	struct GlobalAmmo
+	{
+		ammoindex_t ammoType;
+		int ammoCount;
+	};
+
+	struct ClipAmmo
+	{
+		clipindex_t clipIndex;
+		int ammoCount[2];
+		int chargeAmmoCount[2];
+	};
+
 	struct PlayerActiveWeaponState
 	{
 		int weapAnim;
@@ -1261,13 +1293,37 @@ namespace game
 		unsigned int weaponShotCount;
 	};
 
+	struct PlayerWeaponAnimArrays
+	{
+		XAnimParts* normalAnimArray[190];
+		XAnimParts* altAnimArray[190];
+		XAnimParts* leftHandedAnimArray[190];
+		XAnimParts* leftHandedAltAnimArray[190];
+	};
+
 	struct PlayerWeaponCommonState
 	{
-		char __pad0[12];
+		Weapon offHand;
+		Weapon lethalWeapon;
+		Weapon tacticalWeapon;
 		Weapon weapon;
 		int weapFlags;
-		char __pad1[28];
+		float fWeaponPosFrac;
+		float fPreviousWeaponPosFrac;
+		float aimSpreadScale;
+		int adsDelayTime;
+		int spreadOverride;
+		int spreadOverrideState;
+		float fAimSpreadMovementScale;
 		PlayerHandIndex lastWeaponHand;
+		GlobalAmmo ammoNotInClip[15];
+		ClipAmmo ammoInClip[15];
+		int weapLockFlags;
+		__int16 weapLockedEntnum;
+		float weapLockedPos[3];
+		int weaponIdleTime;
+		Weapon lastStowedWeapon;
+		PlayerWeaponAnimArrays weaponAnimArrays;
 	};
 
 	static_assert(offsetof(PlayerWeaponCommonState, weapon) == 12);
@@ -1317,14 +1373,155 @@ namespace game
 		TEAM_NUM_TEAMS = 0x4,
 	};
 
+	enum KillCamEntityType : std::uint32_t
+	{
+		KC_NO_ENTITY = 0x0,
+		KC_HELICOPTER = 0x1,
+		KC_AIRSTRIKE = 0x2,
+		KC_EXPLOSIVE = 0x3,
+		KC_FAST_EXPLOSIVE = 0x4,
+		KC_ROCKET = 0x5,
+		KC_ROCKET_CORPSE = 0x6,
+		KC_TURRET = 0x7,
+		KC_JAVELIN = 0x8,
+		KC_REMOTE_MISSILE = 0x9,
+	};
+
+	enum userbuttons_t
+	{
+		BUTTON_ATTACK = (1 << 0),
+		BUTTON_SPRINT = (1 << 1),
+		BUTTON_MELEEZOOM = (1 << 2), // on melee attack
+		BUTTON_UNK1 = (1 << 3), // ??
+		BUTTON_RELOAD = (1 << 4),
+		BUTTON_USERELOAD = (1 << 5), // BUTTON_USERELOAD | BUTTON_UNK1 == BUTTON_USE?
+		BUTTON_UNK3 = (1 << 6), // ??
+		BUTTON_UNK4 = (1 << 7), // ??
+		BUTTON_STANCE = (1 << 8),
+		BUTTON_UNK5 = (1 << 9), // on ps->eFlags & EF_DEAD
+		BUTTON_GOSTAND = (1 << 10), // jump button
+		BUTTON_ADS = (1 << 11),
+		BUTTON_UNK6 = (1 << 12), // ??
+		BUTTON_UNK7 = (1 << 13), // ??
+		BUTTON_FRAG = (1 << 14),
+		BUTTON_SMOKE = (1 << 15),
+		BUTTON_UNK8 = (1 << 16), // ucmd->selectedLoc and ucmd->selectedLocAngle related
+		BUTTON_UNK9 = (1 << 17), // ??
+		BUTTON_UNK10 = (1 << 18), // ??
+		BUTTON_UNK11 = (1 << 19), // ??
+		BUTTON_UNK12 = (1 << 20), // ucmd->remoteControlAngles and ucmd->remoteControlMove related
+		BUTTON_UNK13 = (1 << 21), // ??
+		BUTTON_UNK14 = (1 << 22), // ??
+		BUTTON_UNK15 = (1 << 23), // ??
+		BUTTON_UNK16 = (1 << 24), // ??
+		BUTTON_UNK17 = (1 << 25), // ??
+		BUTTON_UNK18 = (1 << 26), // ??
+		BUTTON_UNK19 = (1 << 27), // ??
+		BUTTON_UNK20 = (1 << 28), // ??
+		BUTTON_UNK21 = (1 << 29), // ??
+		BUTTON_BIT_COUNT = 29
+	};
+
+	enum weaponstate_t : std::uint32_t
+	{
+		WEAPON_READY,
+		WEAPON_RAISING,
+		WEAPON_RAISING_ALTSWITCH,
+		WEAPON_DROPPING,
+		WEAPON_DROPPING_QUICK,
+		WEAPON_DROPPING_ALT,
+		WEAPON_FIRING,
+		WEAPON_FIRING_BALL_PASS,
+		WEAPON_RECHAMBERING,
+		WEAPON_RELOADING,
+		WEAPON_RELOADING_INTERUPT,
+		WEAPON_RELOAD_START,
+		WEAPON_RELOAD_START_INTERUPT,
+		WEAPON_RELOAD_END,
+		WEAPON_MELEE_WAIT_FOR_RESULT,
+		WEAPON_MELEE_FIRE,
+		WEAPON_MELEE_END,
+		WEAPON_OFFHAND_INIT,
+		WEAPON_OFFHAND_PREPARE,
+		WEAPON_OFFHAND_HOLD,
+		WEAPON_OFFHAND_HOLD_PRIMED,
+		WEAPON_OFFHAND_FIRE,
+		WEAPON_OFFHAND_SWITCH,
+		WEAPON_OFFHAND_DETONATE,
+		WEAPON_OFFHAND_END,
+		WEAPON_DETONATING,
+		WEAPON_SPRINT_RAISE,
+		WEAPON_SPRINT_LOOP,
+		WEAPON_SPRINT_DROP,
+		WEAPON_STUNNED_START,
+		WEAPON_STUNNED_LOOP,
+		WEAPON_STUNNED_END,
+		WEAPON_NIGHTVISION_WEAR,
+		WEAPON_NIGHTVISION_REMOVE,
+		WEAPON_MANTLE_UP,
+		WEAPON_MANTLE_OVER,
+		WEAPON_BLAST_IMPACT,
+		WEAPON_HYBRID_SIGHT_IN,
+		WEAPON_HYBRID_SIGHT_OUT,
+		WEAPON_HEAT_COOLDOWN_START,
+		WEAPON_HEAT_COOLDOWN_END,
+		WEAPON_HEAT_COOLDOWN_READY,
+		WEAPON_OVERHEAT_END,
+		WEAPON_OVERHEAT_READY,
+		WEAPON_RIOTSHIELD_PREPARE,
+		WEAPON_RIOTSHIELD_HOLD,
+		WEAPON_RIOTSHIELD_START,
+		WEAPON_RIOTSHIELD_END,
+		WEAPON_INSPECTION_ANIM,
+		WEAPONSTATES_NUM,
+	};
+
+	struct clientInfo_t
+	{
+		char clientNum;
+		char name[32];
+		int rank_mp;
+		int prestige_mp;
+		int rank_alien;
+		int prestige_alien;
+		char clanAbbrev[8];
+		int location;
+		int health;
+		unsigned int playerCardPatch;
+		unsigned int playerCardBackground;
+		unsigned __int8 use_elite_clan_tag;
+		char elite_clan_tag_text[5];
+		char __pad1[28];
+		// Patoke @note: not sure if these are right
+		//int elite_clan_level;
+		//int braggingRights;
+		//unsigned __int8 isMLGSpectator;
+		//int game_extrainfo;
+		//Material* rankIconHandle;
+		//const char* rankDisplayLevel;
+	};
+
 	struct usercmd_s
 	{
 		int serverTime;
-		unsigned int buttons;
-		char __pad0[20];
+		int buttons;
+		int angles[3];
+		Weapon weapon;
+		Weapon offHandIndex;
 		char forwardmove;
 		char rightmove;
-		char __pad1[34];
+		uint16_t airburstMarkDistance;
+		uint16_t meleeChargeYaw;
+		char meleeChargeDist;
+		char selectedLoc[2];
+		uint8_t selectedLocAngle;
+		char remoteControlAngles[2];
+		char remoteControlMove[3];
+		char unk_29;
+		uint16_t spawnTraceEntIndex;
+		uint16_t unk_2C;
+		uint32_t sightedSpawnsMask[2];
+		uint32_t partialSightedSpawnsMask[2];
 	};
 	static_assert(offsetof(usercmd_s, forwardmove) == 28);
 	static_assert(offsetof(usercmd_s, rightmove) == 29);
@@ -1335,39 +1532,16 @@ namespace game
 		usercmd_s cmd;
 	}; // 68
 
-	struct gclient_s
+	// Patoke @todo: maybe reverse?
+	struct SessionData {};
+
+	struct playerEntity_t
 	{
-		// playerstate is here from down
-		char __pad0[2];
-		char pm_type; // 2
-		char __pad1[297]; // 3
-		float angles[3]; // 300 304 308
-		char __pad2[236]; // 312
-
-		PlayerActiveWeaponState weaponState[2]; // 548
-		char __pad_2_almost_over[300]; // 604
-
-		PlayerWeaponCommonState weapCommon; // 904
-		char __pad2_over[17620]; // 956
-
-		sessionState_t sessionState; // 18576
-		char __pad3[20]; // 18580
-		session_t sess; // 18600
-		char __pad3_align[132]; // 18604
-
-		team_t team; // 18800
-		char __pad4[30];
-		char name[32]; // 18834
-		char __pad5[622];
-		int flags; // 19488 
-	}; // size = ?
-
-	static_assert(offsetof(gclient_s, angles) == 300);
-	static_assert(offsetof(gclient_s, weaponState) == 548);
-	static_assert(offsetof(gclient_s, sessionState) == 18576);
-	static_assert(offsetof(gclient_s, team) == 18800);
-	static_assert(offsetof(gclient_s, name) == 18834);
-	static_assert(offsetof(gclient_s, flags) == 19488);
+		int bPositionToADS;
+		float fLastIdleFactor;
+		float baseMoveOrigin[3];
+		float baseMoveAngles[3];
+	};
 
 	struct EntityState
 	{
@@ -1380,39 +1554,6 @@ namespace game
 		uint16_t infoIndex;
 	};
 
-#pragma pack(push, 1)
-	struct gentity_s
-	{
-		EntityState s;
-		char _padding[106];
-		vec3_t trBase;
-		vec3_t trDelta;
-		char _padding1[12];
-		vec3_t currentAngles;
-		char pad_0008[108];
-		Bounds box;
-		Bounds absBox;
-		vec3_t origin;
-		char pad_0144[12];
-		short owner;
-		char _pad0[6];
-		gclient_s* client;
-		char _pad1[56];
-		scr_string_t script_classname;
-		char _pad2[20];
-		int flags;
-		int eventTime;
-		int clipmask; // 440
-		char _pad3[60];
-		int missile_flags;
-		char _pad4[68];
-		EntHandle remoteControlledOwner;
-		char _pad5[156];
-	}; // size = 736
-#pragma pack(pop)
-	static_assert(offsetof(gentity_s, owner) == 0x150);
-	static_assert(sizeof(gentity_s) == 736);
-
 	struct SprintState
 	{
 		int sprintButtonUpRequired;
@@ -1422,49 +1563,103 @@ namespace game
 		int sprintStartMaxLength;
 	};
 
-	struct playerState_s_SprintState
-	{
-		char __pad0[440];
-		SprintState sprintState; // 440
-		char __pad1[88]; // 460
-		PlayerActiveWeaponState weaponState[2]; // 548
-	};
-
 	struct playerState_s
 	{
 		char clientNum;
-		char __pad0[1];
-		char pm_type;
-		char __pad1[44];
-		int otherFlags;
-		char __pad2[28];
+		bool cursorHintDualWield;
+		uint8_t pm_type;
+		// Patoke @todo: one of these is messed up, idk which but i just removed this one
+		//uint8_t remoteEyesTagname;
+		uint8_t shellshockIndex;
+		uint8_t damageEvent;
+		uint8_t damageYaw;
+		uint8_t damagePitch;
+		uint8_t damageCount;
+		uint8_t damageFlags;
+		uint8_t cursorHint;
+		uint8_t meleeChargeDist;
+		uint8_t meleeServerResult;
+		uint8_t laserIndex;
+		uint8_t bobCycle;
+		char corpseIndex;
+		bool radarMode;
+		bool enemyRadarMode;
+		uint8_t perkSlots[9];
+		int16_t remoteEyesEnt;
+		int16_t remoteControlEnt;
+		int16_t throwbackGrenadeOwner;
+		int16_t viewlocked_entNum;
+		// Patoke @note: after this field, everything is 100% correct
+		int16_t groundEntityNum;
+		int16_t linkWeaponEnt;
+		int16_t cursorHintEntIndex;
+		int16_t meleeChargeEnt;
+		int16_t movingPlatformEntity;
+		int16_t groundRefEnt;
+		uint16_t loopSound;
+		int linkFlags;
+		int16_t remoteTurretEnt;
+		int16_t gravity;
+		int16_t speed;
+		uint16_t shellshockFlashDuration;
+		uint16_t shellshockMoveDuration;
+		uint16_t viewmodelIndex;
+		unsigned int cursorHintString;
+		int meleeChargeTime;
+		int shellshockTime;
+		int commandTime;
 		int pm_time;
 		int pm_flags;
 		int eFlags;
-		int linkFlags;
-		char __pad3[24];
+		int otherFlags;
+		int foliageSoundTime;
+		int grenadeTimeLeft;
+		int throwbackGrenadeTimeLeft;
+		int varGrenadeSwitchTime;
+		int jumpTime;
+		float jumpOriginZ;
 		vec3_t origin;
 		vec3_t velocity;
-		char __pad4[312];
+		vec3_t delta_angles;
+		vec3_t vLadderVec;
+		Weapon throwbackWeapon;
+		Weapon cursorHintWeapon;
+		int legsTimer;
+		int legsAnim;
+		int torsoTimer;
+		int torsoAnim;
+		int animMoveType;
+		char __pad4[104];
+		float viewangles[3];
+		char __pad5[128];
 		SprintState sprintState;
-		char __pad5[72];
-		PlayerActiveWeaponState weaponState[2];
+		char __pad6[88];
+		PlayerActiveWeaponState weapState[NUM_WEAPON_HANDS];
 		Weapon weaponsEquipped[15]; // 604
 		PlayerEquippedWeaponState weapEquippedData[15]; // 664
 		PlayerWeaponCommonState weapCommon; // 904
+		unsigned int perks[4];
+		char __pad7[1452];
+		int deltaTime;
+		char size_pad2[9496];
 	};
 
 	static_assert(offsetof(playerState_s, pm_type) == 2);
-	//static_assert(offsetof(playerState_s, groundEntityNum) == 34);
-	static_assert(offsetof(playerState_s, otherFlags) == 48);
+	static_assert(offsetof(playerState_s, groundEntityNum) == 34);
+	static_assert(offsetof(playerState_s, linkFlags) == 48);
 	static_assert(offsetof(playerState_s, pm_time) == 80);
 	static_assert(offsetof(playerState_s, pm_flags) == 84);
 	static_assert(offsetof(playerState_s, eFlags) == 88);
-	static_assert(offsetof(playerState_s, linkFlags) == 92);
+	static_assert(offsetof(playerState_s, otherFlags) == 92);
 	static_assert(offsetof(playerState_s, origin) == 120);
 	static_assert(offsetof(playerState_s, velocity) == 132);
-	static_assert(offsetof(playerState_s, sprintState) == 456);
-	static_assert(offsetof(playerState_s, weaponState) == 548); // not 564
+	static_assert(offsetof(playerState_s, viewangles) == 300);
+	static_assert(offsetof(playerState_s, sprintState) == 440);
+	static_assert(offsetof(playerState_s, weapState) == 548); // not 564
+	static_assert(offsetof(playerState_s, weapCommon.ammoInClip) == 1136);
+	static_assert(offsetof(playerState_s, perks) == 7608);
+	static_assert(offsetof(playerState_s, deltaTime) == 9076);
+	static_assert(sizeof(playerState_s) == 0x4890); // 18576
 
 	struct snapshot_s
 	{
@@ -1520,37 +1715,92 @@ namespace game
 		vec3_t axis[3];
 	};
 
-	struct cg_s_ps
-	{
-		playerState_s_SprintState predictedPlayerState;
-	};
-
 	struct cg_s
 	{
-		char __pad0[18644];
+		playerState_s predictedPlayerState;
+		/*centity_s*/void* predictedPlayerEntity;
+		playerEntity_t playerEntity;
+		int predictedErrorTime;
+		float predictedError[3];
+		char clientNum;
+		int localClientNum;
+		DemoType demoType;
 		CubemapShot cubemapShot;
 		int cubemapSize;
 		char __pad4[28];
 		snapshot_s* nextSnap;
 		char __pad1[582400];
-		int unk_601088;
+		int spectatingThirdPerson;
 		int renderingThirdPerson;
 		char __pad5[24];
 		refdef_t_correct refdef;
 		char __pad2[378452];
-		int unk_979676;
+		int inKillCam;
 		char __pad3[16];
-		int unk_979696;
+		KillCamEntityType killCamEntityType;
 	};
 
 	static_assert(offsetof(cg_s, cubemapShot) == 18644);
 	static_assert(offsetof(cg_s, cubemapSize) == 18648);
 	static_assert(offsetof(cg_s, nextSnap) == 18680);
-	static_assert(offsetof(cg_s, unk_601088) == 601088);
+	static_assert(offsetof(cg_s, spectatingThirdPerson) == 601088);
 	static_assert(offsetof(cg_s, renderingThirdPerson) == 601092);
 	static_assert(offsetof(cg_s, refdef) == 601120);
-	static_assert(offsetof(cg_s, unk_979676) == 979676);
-	static_assert(offsetof(cg_s, unk_979696) == 979696);
+	static_assert(offsetof(cg_s, inKillCam) == 979676);
+	static_assert(offsetof(cg_s, killCamEntityType) == 979696);
+
+	struct gclient_s
+	{
+		playerState_s ps;
+		sessionState_t sessionState; // 18576
+		char __pad3[20]; // 18580
+		session_t sess; // 18600
+		char __pad3_align[132]; // 18604
+
+		team_t team; // 18800
+		char __pad4[30];
+		char name[32]; // 18834
+		char __pad5[622];
+		int flags; // 19488 
+	}; // size = ?
+
+	static_assert(offsetof(gclient_s, sessionState) == 18576);
+	static_assert(offsetof(gclient_s, team) == 18800);
+	static_assert(offsetof(gclient_s, name) == 18834);
+	static_assert(offsetof(gclient_s, flags) == 19488);
+
+#pragma pack(push, 1)
+	struct gentity_s
+	{
+		EntityState s;
+		char _padding[106];
+		vec3_t trBase;
+		vec3_t trDelta;
+		char _padding1[12];
+		vec3_t currentAngles;
+		char pad_0008[108];
+		Bounds box;
+		Bounds absBox;
+		vec3_t origin;
+		char pad_0144[12];
+		short owner;
+		char _pad0[6];
+		gclient_s* client;
+		char _pad1[56];
+		scr_string_t script_classname;
+		char _pad2[20];
+		int flags;
+		int eventTime;
+		int clipmask; // 440
+		char _pad3[60];
+		int missile_flags;
+		char _pad4[68];
+		EntHandle remoteControlledOwner;
+		char _pad5[156];
+	}; // size = 736
+#pragma pack(pop)
+	static_assert(offsetof(gentity_s, owner) == 0x150);
+	static_assert(sizeof(gentity_s) == 736);
 
 	struct pmove_t
 	{

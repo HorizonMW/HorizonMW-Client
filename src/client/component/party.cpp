@@ -429,6 +429,8 @@ namespace party
 
 		void set_new_map(const char* mapname, const char* gametype, game::msg_t* msg)
 		{
+			utils::hook::invoke<void>(0x27A040_b);
+			
 			if (!fastfiles::is_stock_map(mapname))
 			{
 				fastfiles::set_usermap(mapname);
