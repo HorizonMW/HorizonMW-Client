@@ -4,7 +4,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/0sh80kdnsvm53rno?svg=true)](https://ci.appveyor.com/project/auroramod/h1-mod)
 [![Discord](https://img.shields.io/discord/1272500523010097202?color=%237289DA&label=members&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/horizonmw)
 
-# HMW-Mod
+# HorizonMW - H2M-Mod
 
 <p align="center">
   <img src="assets/github/banner.png?raw=true" />
