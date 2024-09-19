@@ -1,5 +1,5 @@
 ![license](https://img.shields.io/github/license/auroramod/h1-mod.svg)
-[![open bugs](https://img.shields.io/github/issues/auroramod/h1-mod/bug?label=bugs)](https://github.com/auroramod/h1-mod/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+[![open bugs](https://img.shields.io/github/issues/HorizonMW/HorizonMW-Client/bug?label=bugs)](https://github.com/HorizonMW/HorizonMW-Client/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 [![Build](https://github.com/auroramod/h1-mod/workflows/Build/badge.svg)](https://github.com/auroramod/h1-mod/actions)
 [![Build status](https://ci.appveyor.com/api/projects/status/0sh80kdnsvm53rno?svg=true)](https://ci.appveyor.com/project/auroramod/h1-mod)
 [![Discord](https://img.shields.io/discord/1272500523010097202?color=%237289DA&label=members&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/horizonmw)
