@@ -75,9 +75,11 @@ namespace server_list
 		std::string notification_message = "";
 
 		bool error_is_displayed = false;
-		std::string error_header = "Error";
+		std::string error_header = "Error!";
 		std::string error_message = "";
+		std::chrono::seconds error_display_length = 3s;
 
+		std::string failed_to_join_header = "Failed to join server!";
 		std::string failed_to_join_reason = "";
 	}
 
@@ -230,7 +232,7 @@ namespace server_list
 						party::connect(servers[i].address);
 					}
 					else {
-						server_list::tcp::display_error("Failed to join server!", server_list::tcp::failed_to_join_reason);
+						server_list::tcp::display_error(server_list::tcp::failed_to_join_header, server_list::tcp::failed_to_join_reason);
 					}
 				}
 			}
@@ -807,7 +809,7 @@ namespace server_list
 		{
 			error_is_displayed = false;
 			ui_scripting::notify("hideErrorMessage", {});
-		}, scheduler::pipeline::main, 3s);
+		}, scheduler::pipeline::main, error_display_length);
 	}
 
 	bool tcp::check_can_join(std::string& connect_address)
@@ -874,14 +876,27 @@ namespace server_list
 		std::string maxclients = game_server_response_json["sv_maxclients"];
 		std::string clients = game_server_response_json["clients"];
 		std::string bots = game_server_response_json["bots"];
+		std::string privateclients = game_server_response_json.value("sv_privateClients", "0");
 
 		int max_clients = std::stoi(maxclients);
 		int current_clients = std::stoi(clients);
+		int private_clients = std::stoi(privateclients);
 		int current_bots = std::stoi(bots);
 		int player_count = current_clients - current_bots;
 
+		int actual_max_clients = max_clients - private_clients;
+
 		if (player_count == max_clients) {
+			error_display_length = 3s;
+			failed_to_join_header = "Failed to join server!";
 			failed_to_join_reason = "Game is full.";
+			return false;
+		}
+
+		if (player_count == actual_max_clients) {
+			error_display_length = 10s;
+			failed_to_join_header = "Reserved Game Full!";
+			failed_to_join_reason = "Reserved? Use commandline\n/connect " + connect_address;
 			return false;
 		}
 

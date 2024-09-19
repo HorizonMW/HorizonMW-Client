@@ -37,6 +37,10 @@
 #include "stats.hpp"
 #include "voice/voice_chat_globals.hpp"
 
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+
 namespace ui_scripting
 {
 	namespace
@@ -416,10 +420,24 @@ namespace ui_scripting
 				notify("showvoicemessage", {});
 				voice_chat_globals::set_voice_message_shown_state(true);
 				scheduler::once([=]()
-					{
-						notify("hidevoicemessage", {});
-					}, scheduler::pipeline::main, 5s);
-				};
+				{
+					notify("hidevoicemessage", {});
+				}, scheduler::pipeline::main, 5s);
+			};
+
+			// In lua hudextras:gettime("%H:%M:%S %p") // Example: 02:30:15 PM
+			hud_extras["gettime"] = [](const game&, std::string format) { // Format can be %H:%M:%S %p
+				auto now = std::chrono::system_clock::now();
+				auto time_t_now = std::chrono::system_clock::to_time_t(now);
+
+				std::tm local_time;
+				localtime_s(&local_time, &time_t_now);
+
+				std::ostringstream oss;
+				oss << std::put_time(&local_time, format.c_str());
+
+				return oss.str();
+			};
 
 			auto server_list_table = table();
 			lua["serverlist"] = server_list_table;

@@ -326,6 +326,7 @@ namespace hmw_tcp_utils {
 		data["sv_discordImageUrl"] = party::get_dvar_string("sv_discordImageUrl");
 		data["sv_discordImageText"] = party::get_dvar_string("sv_discordImageText");
 		data["port"] = utils::string::va("%i", party::get_dvar_int("net_port"));
+		data["sv_privateClients"] = utils::string::va("%i", party::get_dvar_int("sv_privateClients"));
 
 		if (!fastfiles::is_stock_map(mapname))
 		{
