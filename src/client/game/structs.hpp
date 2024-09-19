@@ -1517,9 +1517,8 @@ namespace game
 		uint8_t selectedLocAngle;
 		char remoteControlAngles[2];
 		char remoteControlMove[3];
-		char unk_29;
+		char sightedClientsMask;
 		uint16_t spawnTraceEntIndex;
-		uint16_t unk_2C;
 		uint32_t sightedSpawnsMask[2];
 		uint32_t partialSightedSpawnsMask[2];
 	};
