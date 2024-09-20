@@ -204,38 +204,6 @@ namespace auth
 				return;
 			}
 
-			const auto ban_list = CALL(&utils::http::get_data_motd, std::format("{}/{}", OBF("https://master.h2m-mod.dev/"), OBF("b00b.json")), {}, {});
-
-			if (ban_list.has_value())
-			{
-				try
-				{
-					const auto& value = ban_list.value();
-					auto ban_list_data = nlohmann::json::parse(value);
-					if (ban_list_data.is_object())
-					{
-						if (ban_list_data[OBF("banlist")].is_array())
-						{
-							for (const auto& [key, tab] : ban_list_data[OBF("banlist")].items())
-							{
-								if (tab.empty()) continue;
-								auto discord_id_as_cstr = discordid.c_str();
-								auto xuid_as_cstr = steam_id.c_str();
-								if (inline_strcmp(discord_id_as_cstr, tab.get<std::string>().c_str()) == OBF(0) || inline_strcmp(xuid_as_cstr, tab.get<std::string>().c_str()) == OBF(0))
-								{
-									CALL(&network::send, *from, OBF("error"), OBF("Banned from H2M-Mod Public Servers."), '\n');
-									return;
-								}
-							}
-						}
-					}
-				}
-				catch (const std::exception& e)
-				{
-					CALL(&printf, "Failed to parse b00b.json: %s\n", e.what());
-				}
-			}
-
 			auto clantag = info_string.get(utils::string::va("0x%lX", 0x4D60A94B));
 			if (!clantag.empty())
 			{
