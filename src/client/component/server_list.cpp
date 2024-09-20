@@ -673,12 +673,10 @@ namespace server_list
 
 		if (page_index >= pages.size()) 
 		{
-			console::info("Adding new page %d", page_index + 1);
 			pages.resize(page_index + 1);
 			pages[page_index].page_index = page_index;
 		}
 
-		console::info("[Page %d] Adding server: %s playing %s on map %s | Ip = %s", page_index, server_info.host_name.data(), server_info.game_type.data(), server_info.map_name.data(), server_info.connect_address.data());
 		pages[page_index].add_server(server_info);
 	}
 
