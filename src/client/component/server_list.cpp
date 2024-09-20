@@ -351,6 +351,46 @@ namespace server_list
 		}
 	}
 
+	void sort_current_page(int sort_type) {
+		auto servers_cache = servers;
+
+		{
+			std::lock_guard<std::mutex> _(mutex);
+			servers.clear();
+		}
+		ui_scripting::notify("updateGameList", {});
+
+		std::stable_sort(servers_cache.begin(), servers_cache.end(), [sort_type](const server_info& a, const server_info& b)
+		{
+			switch (sort_type)
+			{
+				case sort_type_unknown:
+					// Patoke @todo: what is this doing and why does it exist?
+					break;
+				case sort_type_hostname:
+					return a.host_name.compare(b.host_name) < 0;
+				case sort_type_map:
+					return a.map_name.compare(b.map_name) < 0;
+				case sort_type_mode:
+					return a.game_type.compare(b.game_type) < 0;
+				case sort_type_players: // sort by most players
+					return (a.clients - a.bots) > (b.clients - b.bots);
+				case sort_type_ping: // sort by smallest ping
+					return a.ping < b.ping;
+			}
+				return true;
+			});
+
+		scheduler::once([=]()
+		{
+			for (server_info server : servers_cache)
+			{
+				insert_server(std::move(server));
+			}
+			ui_scripting::notify("updateGameList", {});
+		}, scheduler::pipeline::main, 125ms);
+	}
+
 	int get_player_count()
 	{
 		std::lock_guard<std::mutex> _(mutex);
@@ -623,8 +663,10 @@ namespace server_list
 				{
 					insert_server(std::move(server));
 				}
+
 				ui_scripting::notify("updateGameList", {});
 				ui_scripting::notify("hideRefreshingNotification", {});
+				sort_current_page(list_sort_type);
 				is_loading_page = false;
 			}, scheduler::pipeline::main, 125ms);
 		}
