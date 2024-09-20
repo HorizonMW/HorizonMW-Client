@@ -600,9 +600,6 @@ namespace server_list
 			return;
 		}
 
-		PageData page = pages[page_number];
-		console::info("Load page %d", page_number);
-
 		if (add_servers)
 		{
 			is_loading_page = true;
@@ -616,8 +613,8 @@ namespace server_list
 
 			scheduler::once([=]()
 			{
-				PageData page2 = pages[page_number];
-				for (server_info server : page2.listed_servers)
+				PageData page = pages[page_number];
+				for (server_info server : page.listed_servers)
 				{
 					insert_server(std::move(server));
 				}
