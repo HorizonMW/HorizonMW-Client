@@ -26,7 +26,14 @@
 
 namespace server_list
 {
-	namespace tcp {
+	template<typename T>
+	inline T ceil(T x, T y)
+	{
+		return x / y + (x % y != 0);
+	}
+
+	namespace tcp 
+	{
 		// Paging
 		const int server_limit_per_page = 100;
 		int current_page = 0;
@@ -41,32 +48,29 @@ namespace server_list
 		bool interrupt_favourites = false;
 
 		struct PageData {
-			int pageIndex = -1;
 			std::vector<server_info> listed_servers;
+			int page_index = -1;
+			int player_count = 0;
 
-			void add_server(server_info& info) {
-				if (listed_servers.size() >= server_limit_per_page) {
+			void add_server(server_info& info) 
+			{
+				if (listed_servers.size() >= server_limit_per_page) 
+				{
 					return;
 				}
 
+				player_count = info.clients - info.bots;
 				listed_servers.emplace_back(info);
 			}
 
-			void clear_servers() {
+			void clear_servers() 
+			{
 				listed_servers.clear();
 			}
 
-			int get_server_count() {
+			int get_server_count() 
+			{
 				return static_cast<int>(listed_servers.size());
-			}
-
-			int get_player_count() {
-				int count = 0;
-				for (server_info& server : listed_servers)
-				{
-					count += server.clients - server.bots;
-				}
-				return count;
 			}
 		};
 
@@ -85,8 +89,6 @@ namespace server_list
 
 	namespace
 	{
-		const int server_limit = INT_MAX; // Handled in serverlist.lua now
-
 		enum sort_types : uint32_t {
 			sort_type_unknown = 0, // Patoke @todo: reverse
 			sort_type_hostname = 1,
@@ -100,27 +102,14 @@ namespace server_list
 		{
 			game::netadr_s address{};
 			volatile bool requesting = false;
-			std::unordered_map<game::netadr_s, int> queued_servers{};
 		} master_state;
 
 		std::mutex mutex;
 		std::vector<server_info> servers;
 
 		size_t server_list_page = 0;
-		volatile bool update_server_list = false;
 		int list_sort_type = sort_type_hostname;
 		std::chrono::high_resolution_clock::time_point last_scroll{};
-
-		size_t get_page_count()
-		{
-			const auto count = servers.size() / server_limit;
-			return count + (servers.size() % server_limit > 0);
-		}
-
-		size_t get_page_base_index()
-		{
-			return server_list_page * server_limit;
-		}
 
 		bool get_favourites_file(nlohmann::json& out)
 		{
@@ -148,63 +137,30 @@ namespace server_list
 			return true;
 		}
 
-		void parse_favourites()
-		{
-			std::lock_guard<std::mutex> _(mutex);
-
-			nlohmann::json obj;
-			if (!get_favourites_file(obj))
-				return;
-
-			for (auto& element : obj) 
-			{
-				if (!element.is_string())
-					continue;
-
-				game::netadr_s address{};
-				game::NET_StringToAdr(element.get<std::string>().data(), &address);
-
-				master_state.queued_servers[address] = 0;
-			}
-		}
-
 		void refresh_server_list()
 		{
 			{
 				std::lock_guard<std::mutex> _(mutex);
 				servers.clear();
 
-				for (tcp::PageData page : tcp::pages) {
-					page.clear_servers();
-				}
 				tcp::pages.clear();
 				tcp::current_page = 0;
 
-
-				master_state.queued_servers.clear();
 				server_list_page = 0;
 			}
 
 			ui_scripting::notify("updateGameList", {});
 			ui_scripting::notify("updatePageCounter", {});
-			// Use new TCP populate function
+
 			auto* sort_type = game::Dvar_FindVar("ui_netSource");
+			// Internet
 			if (sort_type && sort_type->current.integer == 1)
 			{
-				// Internet
-				if (server_list::tcp::getting_favourites) {
-					server_list::tcp::interrupt_favourites = true;
-				}
-
 				server_list::tcp::populate_server_list_threaded();
 			}
+			// Favourites
 			else if (sort_type && sort_type->current.integer == 2)
 			{
-				// Favourites
-				if (server_list::tcp::getting_server_list) {
-					server_list::tcp::interrupt_server_list = true;
-				}
-	
 				server_list::tcp::parse_favourites_tcp_threaded();
 			}
 		}
@@ -213,7 +169,7 @@ namespace server_list
 		{
 			std::lock_guard<std::mutex> _(mutex);
 
-			const auto i = static_cast<size_t>(index) + get_page_base_index();
+			const auto i = static_cast<size_t>(index);
 			if (i < servers.size())
 			{
 				static auto last_index = ~0ull;
@@ -240,23 +196,20 @@ namespace server_list
 
 		void trigger_refresh()
 		{
-			update_server_list = true;
+			ui_scripting::notify("updateGameList", {});
 		}
 
 		int ui_feeder_count()
 		{
 			std::lock_guard<std::mutex> _(mutex);
-			const auto count = static_cast<int>(servers.size());
-			const auto index = get_page_base_index();
-			const auto diff = count - index;
-			return diff > server_limit ? server_limit : static_cast<int>(diff);
+			return static_cast<int>(servers.size());
 		}
 
 		const char* ui_feeder_item_text(const int index, const int column)
 		{
 			std::lock_guard<std::mutex> _(mutex);
 
-			const auto i = get_page_base_index() + index;
+			const auto i = static_cast<size_t>(index);
 
 			if (i >= servers.size())
 			{
@@ -320,82 +273,9 @@ namespace server_list
 			trigger_refresh();
 		}
 
-		void do_frame_work()
-		{
-			auto& queue = master_state.queued_servers;
-			if (queue.empty())
-			{
-				return;
-			}
-
-			std::lock_guard<std::mutex> _(mutex);
-
-			size_t queried_servers = 0;
-			const size_t query_limit = 3;
-
-			for (auto i = queue.begin(); i != queue.end();)
-			{
-				if (i->second)
-				{
-					const auto now = game::Sys_Milliseconds();
-					if (now - i->second > 10'000)
-					{
-						i = queue.erase(i);
-						continue;
-					}
-				}
-				else if (queried_servers++ < query_limit)
-				{
-					i->second = game::Sys_Milliseconds();
-					network::send(i->first, "getInfo", utils::cryptography::random::get_challenge());
-				}
-
-				++i;
-			}
-		}
-
 		bool is_server_list_open()
 		{
 			return game::Menu_IsMenuOpenAndVisible(0, "menu_systemlink_join");
-		}
-
-		bool is_scrolling_disabled()
-		{
-			return update_server_list || (std::chrono::high_resolution_clock::now() - last_scroll) < 500ms;
-		}
-
-		bool scroll_down()
-		{
-			if (!is_server_list_open())
-			{
-				return false;
-			}
-
-			if (!is_scrolling_disabled() && server_list_page + 1 < get_page_count())
-			{
-				last_scroll = std::chrono::high_resolution_clock::now();
-				++server_list_page;
-				trigger_refresh();
-			}
-
-			return true;
-		}
-
-		bool scroll_up()
-		{
-			if (!is_server_list_open())
-			{
-				return false;
-			}
-
-			if (!is_scrolling_disabled() && server_list_page > 0)
-			{
-				last_scroll = std::chrono::high_resolution_clock::now();
-				--server_list_page;
-				trigger_refresh();
-			}
-
-			return true;
 		}
 
 		utils::hook::detour lui_open_menu_hook;
@@ -417,18 +297,17 @@ namespace server_list
 	void sort_serverlist(int sort_type)
 	{
 		list_sort_type = sort_type;
-
+		
 		std::vector<server_info> to_sort;
 
 		for (auto& page : server_list::tcp::pages) 
 		{
 			for (server_info& server : page.listed_servers)
 			{
-				to_sort.emplace_back(server);
+				to_sort.push_back(server);
 			}
 		}
 
-		// @Aphrodite TODO change this to sort pages
 		std::stable_sort(to_sort.begin(), to_sort.end(), [sort_type](const server_info& a, const server_info& b)
 		{
 			switch (sort_type)
@@ -461,41 +340,15 @@ namespace server_list
 			tcp::add_server_to_page(page_number, server);
 			server_index++;
 		}
-
-	}
-
-	bool sl_key_event(const int key, const int down)
-	{
-		if (down)
-		{
-			if (key == game::keyNum_t::K_MWHEELUP)
-			{
-				return !scroll_up();
-			}
-
-			if (key == game::keyNum_t::K_MWHEELDOWN)
-			{
-				return !scroll_down();
-			}
-		}
-
-		return true;
 	}
 
 	int get_player_count()
 	{
 		std::lock_guard<std::mutex> _(mutex);
-		/*
-		auto count = 0;
-		for (const auto& server : servers)
-		{
-			count += server.clients - server.bots;
-		}
-		return count;*/
-
 		int count = 0;
-		for (server_list::tcp::PageData page : server_list::tcp::pages) {
-			count += page.get_player_count();
+		for (server_list::tcp::PageData page : server_list::tcp::pages) 
+		{
+			count += page.player_count;
 		}
 		return count;
 	}
@@ -503,32 +356,31 @@ namespace server_list
 	int get_server_count()
 	{
 		std::lock_guard<std::mutex> _(mutex);
-		//return static_cast<int>(servers.size());
 		int count = 0;
-		for (server_list::tcp::PageData page : server_list::tcp::pages) {
+		for (server_list::tcp::PageData page : server_list::tcp::pages) 
+		{
 			count += page.get_server_count();
 		}
 		return count;
-	}
-
-	int get_server_limit()
-	{
-		return server_limit;
 	}
 
 	void add_favourite(int index)
 	{
 		nlohmann::json obj;
 		if (!get_favourites_file(obj))
+		{
 			return;
+		}
 
-		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size()) {
+		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size())
+		{
 			return;
 		}
 
 		tcp::PageData& page = tcp::pages[tcp::current_page];
 
-		if (index < 0 || index >= page.listed_servers.size()) {
+		if (index < 0 || index >= page.listed_servers.size())
+		{
 			return;
 		}
 
@@ -550,17 +402,20 @@ namespace server_list
 	void delete_favourite(int index)
 	{
 		nlohmann::json obj;
-		if (!get_favourites_file(obj)) {
+		if (!get_favourites_file(obj))
+		{
 			return;
 		}
 
-		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size()) {
+		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size()) 
+		{
 			return;
 		}
 
 		tcp::PageData& page = tcp::pages[tcp::current_page];
 
-		if (index < 0 || index >= page.listed_servers.size()) {
+		if (index < 0 || index >= page.listed_servers.size())
+		{
 			return;
 		}
 
@@ -568,7 +423,8 @@ namespace server_list
 
 		for (auto it = obj.begin(); it != obj.end(); ++it)
 		{
-			if (!it->is_string()) {
+			if (!it->is_string()) 
+			{
 				continue;
 			}
 
@@ -580,7 +436,8 @@ namespace server_list
 			}
 		}
 
-		if (!utils::io::write_file("players2/favourites.json", obj.dump())) {
+		if (!utils::io::write_file("players2/favourites.json", obj.dump())) 
+		{
 			return;
 		}
 
@@ -601,16 +458,17 @@ namespace server_list
 	void sort_servers(int sort_type)
 	{
 		std::lock_guard<std::mutex> _(mutex);
-		sort_serverlist(sort_type);
+		sort_serverlist(list_sort_type);
 		trigger_refresh();
 	}
 
-	void server_list::tcp::populate_server_list()
+	void tcp::populate_server_list()
 	{
 		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server());
 
 		// An error message is visible. We want to hide it now.
-		if (error_is_displayed) {
+		if (error_is_displayed)
+		{
 			ui_scripting::notify("hideErrorMessage", {});
 			error_is_displayed = false;
 		}
@@ -620,6 +478,7 @@ namespace server_list
 
 		int server_index = 0;
 
+#ifdef _DEBUG
 		// @Aphrodite todo, update this to be dynamic and not hard coded to 27017
 		console::info("Checking if localhost server is running on default port (27017)");
 		std::string port = "27017"; // Change this to the dynamic port range @todo
@@ -630,6 +489,7 @@ namespace server_list
 			ui_scripting::notify("updateGameList", {});
 			server_index++;
 		}
+#endif
 
 		// Master server did not respond
 		if (master_server_list.empty()) {
@@ -644,8 +504,10 @@ namespace server_list
 		nlohmann::json master_server_response_json = nlohmann::json::parse(master_server_list);
 
 		// Parse server list
-		for (const auto& element : master_server_response_json) {
-			if (interrupt_server_list) {
+		for (const auto& element : master_server_response_json)
+		{
+			if (interrupt_server_list)
+			{
 				break;
 			}
 
@@ -653,7 +515,8 @@ namespace server_list
 			std::string game_server_info = connect_address + "/getInfo";
 			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
 			
-			if (game_server_response.empty()) {
+			if (game_server_response.empty()) 
+			{
 				continue;
 			}
 
@@ -662,16 +525,19 @@ namespace server_list
 			server_index++;
 		}
 
-		load_page(0);
-		interrupt_server_list = false;
-		getting_server_list = false;
+		load_page(0, false);
+		interrupt_server_list = getting_server_list = false;
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 	}
 
 	void tcp::populate_server_list_threaded()
 	{
-		if (getting_server_list) {
+		// if we were updating the favourites list, interrupt it
+		server_list::tcp::interrupt_favourites = server_list::tcp::getting_favourites;
+		
+		if (getting_server_list) 
+		{
 			return;
 		}
 
@@ -684,7 +550,11 @@ namespace server_list
 
 	void tcp::parse_favourites_tcp_threaded()
 	{
-		if (getting_favourites) {
+		// if we were updating the server list, interrupt it
+		server_list::tcp::interrupt_server_list = server_list::tcp::getting_server_list;
+
+		if (getting_favourites)
+		{
 			return;
 		}
 
@@ -707,50 +577,50 @@ namespace server_list
 
 	int tcp::get_total_pages()
 	{
-		int total_servers = get_server_count();
-		int total_pages = static_cast<int>(std::ceil(static_cast<double>(total_servers) / server_limit_per_page));
+		int total_pages = ceil(get_server_count(), server_limit_per_page);
 		return total_pages;
 	}
 
-	int tcp::get_page_number(int serverIndex)
+	int tcp::get_page_number(int server_index)
 	{
-		int pageNumber = static_cast<int>(std::ceil(static_cast<double>(serverIndex) / server_limit_per_page));
-		if (pageNumber == 0) {
-			pageNumber++;
-		}
-		return pageNumber;
+		// add one so we start from 1 rather than 0
+		int page_number = server_index / server_limit_per_page + 1;
+		return page_number;
 	}
 
-	// Once this is working implement next and previous page functions
-
-	void tcp::load_page(int pageNumber)
+	void tcp::load_page(int page_number, bool add_servers)
 	{
-		if (pageNumber < 0) {
-			return;
-		}
-		if (pageNumber >= pages.size()) {
+		if (page_number < 0 || page_number >= pages.size()) {
 			return;
 		}
 
-		servers.clear();
+		PageData page = pages[page_number];
+		console::info("Load page %d", page_number);
 
-		PageData page = pages[pageNumber];
-		std::string log = "Load page " + std::to_string(pageNumber);
-		console::info(log.c_str());
-		for (server_info server : page.listed_servers) {
-			insert_server(std::move(server));
+		if (add_servers)
+		{
+			servers.clear();
+			
+			for (server_info server : page.listed_servers)
+			{
+				insert_server(std::move(server));
+			}
 		}
+
+		sort_serverlist(list_sort_type);
+
+		current_page = page_number;
+
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("updatePageCounter", {});
-		current_page = pageNumber;
 	}
 
 	void tcp::next_page()
 	{
 		current_page++;
-		if (current_page >= get_total_pages()) {
-			load_page(0); // Load first page
-			return;
+		if (current_page >= get_total_pages()) 
+		{
+			return load_page(0); // Load first page
 		}
 		load_page(current_page);
 	}
@@ -758,26 +628,28 @@ namespace server_list
 	void tcp::previous_page()
 	{
 		current_page--;
-		if (current_page < 0) {
-			load_page(get_total_pages() - 1); // Load to last page
-			return;
+		if (current_page < 0) 
+		{
+			return load_page(get_total_pages() - 1); // Load to last page
 		}
 		load_page(current_page);
 	}
 
-	void tcp::add_server_to_page(int pageIndex, server_info &serverInfo)
+	void tcp::add_server_to_page(int page_index, server_info &server_info)
 	{
 		// Page index can't be negative
-		if (pageIndex < 0) {
+		if (page_index < 0) 
+		{
 			return;
 		}
 
-		if (pageIndex >= pages.size()) {
-			pages.resize(pageIndex + 1);
-			pages[pageIndex].pageIndex = pageIndex;
+		if (page_index >= pages.size()) 
+		{
+			pages.resize(page_index + 1);
+			pages[page_index].page_index = page_index;
 		}
 
-		pages[pageIndex].add_server(serverInfo);
+		pages[page_index].add_server(server_info);
 	}
 
 	std::string tcp::get_notification_message()
@@ -797,7 +669,8 @@ namespace server_list
 
 	void tcp::display_error(std::string header, std::string message)
 	{
-		if (error_is_displayed) {
+		if (error_is_displayed)
+		{
 			return;
 		}
 
@@ -817,7 +690,8 @@ namespace server_list
 		std::string game_server_info = connect_address + "/getInfo";
 		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
 
-		if (game_server_response.empty()) {
+		if (game_server_response.empty())
+		{
 			failed_to_join_reason = "Server did not respond.";
 			return false;
 		}
@@ -833,7 +707,6 @@ namespace server_list
 			failed_to_join_reason = "Invalid protocol";
 			return false;
 		}
-
 
 		// Don't show servers that aren't running!
 		std::string server_running = game_server_response_json["sv_running"];
@@ -978,15 +851,14 @@ namespace server_list
 			server.is_private = atoi(isPrivate.c_str()) == 1;
 
 			server.connect_address = connect_address;
-			//insert_server(std::move(server)); // Old method of adding servers to the list. Replaced with paging
 
 			int page_number = get_page_number(server_index) - 1;
-			/* This breaks things ???
-			if (page_number == 0) {
-				insert_server(std::move(server)); // Populate the first page in real time
-			}*/
-
 			add_server_to_page(page_number, server);
+
+			if (page_number == 0)
+			{
+				insert_server(std::move(server)); // Populate the first page in real time
+			}
 		}
 	}
 
@@ -994,27 +866,34 @@ namespace server_list
 	{
 		notification_message = "Loading favourites...";
 		ui_scripting::notify("showRefreshingNotification", {});
-		int server_index = 0;
+
 		nlohmann::json obj;
-		if (!get_favourites_file(obj)) {
+		if (!get_favourites_file(obj)) 
+		{
 			ui_scripting::notify("updateGameList", {});
 			return;
 		}
 
-		for (auto& element : obj) {
-			if (interrupt_favourites) {
+		int server_index = 0;
+		for (auto& element : obj) 
+		{
+			if (interrupt_favourites)
+			{
 				break;
 			}
 
 			if (!element.is_string())
+			{
 				continue;
+			}
 
 			std::string connect_address = element;
 			std::string game_server_info = connect_address + "/getInfo";
 			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
 
 			// Don't show any non TCP servers
-			if (game_server_response.empty()) {
+			if (game_server_response.empty()) 
+			{
 				continue;
 			}
 
@@ -1022,10 +901,12 @@ namespace server_list
 			ui_scripting::notify("updateGameList", {});
 			server_index++;
 		}
-		load_page(0);
+
+		load_page(0, false);
+		interrupt_favourites = getting_favourites = false;
+		
 		console::info("Finished getting favourites!");
-		interrupt_favourites = false;
-		getting_favourites = false;
+
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 	}
@@ -1097,8 +978,6 @@ namespace server_list
 				a.mov(rdi, rax);
 				a.jmp(0x28E341_b);
 			}), true);
-
-			scheduler::loop(do_frame_work, scheduler::pipeline::main);
 		}
 	};
 }

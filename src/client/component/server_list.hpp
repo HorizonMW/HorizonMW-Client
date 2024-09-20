@@ -35,11 +35,8 @@ namespace server_list
 
 	void sort_serverlist(int sort_type);
 
-	bool sl_key_event(int key, int down);
-
 	int get_player_count();
 	int get_server_count();
-	int get_server_limit();
 	void add_favourite(int server_index);
 	void delete_favourite(int server_index);
 	void sort_servers(int sort_type);
@@ -62,15 +59,15 @@ namespace server_list
 
 		int get_total_pages();
 
-		int get_page_number(int serverIndex);
+		int get_page_number(int server_index);
 
-		void load_page(int pageNumber);
+		void load_page(int page_number, bool add_servers = true);
 
 		void next_page();
 
 		void previous_page();
 
-		void add_server_to_page(int pageIndex, server_info &serverInfo);
+		void add_server_to_page(int page_index, server_info &server_info);
 
 		std::string get_notification_message();
 

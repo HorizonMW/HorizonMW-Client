@@ -614,7 +614,8 @@ namespace hmw_voice_chat {
 				return true;
 			}
 
-			return session_is_user_registered_hook.invoke<bool>(session, client_num);
+			// Patoke @todo: does this break anything? if i call original i crash in virtualized/packed code
+			return false;//session_is_user_registered_hook.invoke<bool>(session, client_num);
 		}
 
 		// Patoke @note: allow us to modify mute states from the mute players menu

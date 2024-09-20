@@ -444,19 +444,18 @@ namespace ui_scripting
 
 			server_list_table["getplayercount"] = server_list::get_player_count;
 			server_list_table["getservercount"] = server_list::get_server_count;
-			server_list_table["getserverlimit"] = server_list::get_server_limit;
 			server_list_table["gettotalpagecount"] = server_list::tcp::get_total_pages;
 			server_list_table["getserverlimitperpage"] = server_list::tcp::get_server_limit_per_page;
 			server_list_table["getcurrentpage"] = server_list::tcp::get_current_page;
 			server_list_table["getnotificationmessage"] = server_list::tcp::get_notification_message;
 			server_list_table["geterrormessage"] = server_list::tcp::get_error_message;
 			server_list_table["geterrorheader"] = server_list::tcp::get_error_header;
-			server_list_table["getpagenumber"] = [](int serverIndex) {
-				return server_list::tcp::get_page_number(serverIndex);
+			server_list_table["getpagenumber"] = [](int server_index) {
+				return server_list::tcp::get_page_number(server_index);
 			};
 
-			server_list_table["loadpage"] = [](const game&, int pageIndex) {
-				server_list::tcp::load_page(pageIndex);
+			server_list_table["loadpage"] = [](const game&, int page_index) {
+				server_list::tcp::load_page(page_index);
 			};
 
 			server_list_table["nextpage"] = [](const game&) {
