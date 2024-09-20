@@ -37,7 +37,7 @@ namespace server_list
 		// Paging
 		const int server_limit_per_page = 100;
 		int current_page = 0;
-		bool first_refresh = true;
+		bool is_loading_page = false;
 
 		// Used for when we're refreshing the server / favourites list
 		bool getting_server_list = false;
@@ -139,6 +139,10 @@ namespace server_list
 
 		void refresh_server_list()
 		{
+			if (tcp::is_loading_page) {
+				return;
+			}
+
 			{
 				std::lock_guard<std::mutex> _(mutex);
 				servers.clear();
@@ -269,8 +273,9 @@ namespace server_list
 		{
 			std::lock_guard<std::mutex> _(mutex);
 			servers.emplace_back(std::move(server));
-			sort_serverlist(list_sort_type);
-			trigger_refresh();
+			// we dont need these anymore
+			//sort_serverlist(list_sort_type);
+			//trigger_refresh();
 		}
 
 		bool is_server_list_open()
@@ -330,6 +335,7 @@ namespace server_list
 			return true;
 		});
 
+		// This needs reworking
 		// Clear pages
 		tcp::pages.clear();
 
@@ -599,15 +605,29 @@ namespace server_list
 
 		if (add_servers)
 		{
-			servers.clear();
-			
-			for (server_info server : page.listed_servers)
+			is_loading_page = true;
+			notification_message = "Loading page " + (page_number + 1);
+			ui_scripting::notify("showRefreshingNotification", {});
 			{
-				insert_server(std::move(server));
+				std::lock_guard<std::mutex> _(mutex);
+				servers.clear();
 			}
+			ui_scripting::notify("updateGameList", {});
+
+			scheduler::once([=]()
+			{
+				PageData page2 = pages[page_number];
+				for (server_info server : page2.listed_servers)
+				{
+					insert_server(std::move(server));
+				}
+				ui_scripting::notify("updateGameList", {});
+				ui_scripting::notify("hideRefreshingNotification", {});
+				is_loading_page = false;
+			}, scheduler::pipeline::main, 125ms);
 		}
 
-		sort_serverlist(list_sort_type);
+		//sort_serverlist(list_sort_type);
 
 		current_page = page_number;
 
@@ -617,6 +637,10 @@ namespace server_list
 
 	void tcp::next_page()
 	{
+		if (is_loading_page) {
+			return;
+		}
+
 		current_page++;
 		if (current_page >= get_total_pages()) 
 		{
@@ -627,6 +651,10 @@ namespace server_list
 
 	void tcp::previous_page()
 	{
+		if (is_loading_page) {
+			return;
+		}
+
 		current_page--;
 		if (current_page < 0) 
 		{
@@ -645,10 +673,12 @@ namespace server_list
 
 		if (page_index >= pages.size()) 
 		{
+			console::info("Adding new page %d", page_index + 1);
 			pages.resize(page_index + 1);
 			pages[page_index].page_index = page_index;
 		}
 
+		console::info("[Page %d] Adding server: %s playing %s on map %s | Ip = %s", page_index, server_info.host_name.data(), server_info.game_type.data(), server_info.map_name.data(), server_info.connect_address.data());
 		pages[page_index].add_server(server_info);
 	}
 
