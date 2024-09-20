@@ -72,6 +72,14 @@ namespace server_list
 			{
 				return static_cast<int>(listed_servers.size());
 			}
+
+			int get_player_count() {
+				int count = 0;
+				for (server_info& info : listed_servers) {
+					count += info.clients - info.bots;
+				}
+				return count;
+			}
 		};
 
 		std::vector<PageData> pages;
@@ -354,7 +362,7 @@ namespace server_list
 		int count = 0;
 		for (server_list::tcp::PageData page : server_list::tcp::pages) 
 		{
-			count += page.player_count;
+			count += page.get_player_count();
 		}
 		return count;
 	}
