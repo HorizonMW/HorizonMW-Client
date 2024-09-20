@@ -18,7 +18,6 @@
 #include "motd.hpp"
 #include "fastfiles.hpp"
 #include "scripting.hpp"
-#include "server_list.hpp"
 #include "party.hpp"
 
 #include "game/ui_scripting/execution.hpp"
@@ -475,7 +474,8 @@ namespace ui_scripting
 			};
 			server_list_table["sortservers"] = [](const game&, int sort_type)
 			{
-				server_list::sort_serverlist(sort_type);
+				//server_list::sort_serverlist(sort_type);
+				  server_list::tcp::sort_current_page(sort_type);
 			};
 
 

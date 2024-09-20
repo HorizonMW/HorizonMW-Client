@@ -79,5 +79,7 @@ namespace server_list
 
 		bool check_can_join(std::string& connect_address);
 
+		void sort_current_page(int sort_type);
+
 	}
 }

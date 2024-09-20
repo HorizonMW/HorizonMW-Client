@@ -351,7 +351,7 @@ namespace server_list
 		}
 	}
 
-	void sort_current_page(int sort_type) {
+	void tcp::sort_current_page(int sort_type) {
 		auto servers_cache = servers;
 
 		{
@@ -580,6 +580,8 @@ namespace server_list
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
+		// Auto sort on completion not working
+		//sort_current_page(list_sort_type); // Sort after populating
 	}
 
 	void tcp::populate_server_list_threaded()
@@ -664,9 +666,9 @@ namespace server_list
 					insert_server(std::move(server));
 				}
 
+				sort_current_page(list_sort_type);
 				ui_scripting::notify("updateGameList", {});
 				ui_scripting::notify("hideRefreshingNotification", {});
-				sort_current_page(list_sort_type);
 				is_loading_page = false;
 			}, scheduler::pipeline::main, 125ms);
 		}
@@ -982,6 +984,9 @@ namespace server_list
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
+
+		// Auto sort on completion not working
+		//sort_current_page(list_sort_type); // Sort after populating
 	}
 
 	class component final : public component_interface
