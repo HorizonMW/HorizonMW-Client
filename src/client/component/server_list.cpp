@@ -50,7 +50,6 @@ namespace server_list
 		struct PageData {
 			std::vector<server_info> listed_servers;
 			int page_index = -1;
-			int player_count = 0;
 
 			void add_server(server_info& info) 
 			{
@@ -59,7 +58,6 @@ namespace server_list
 					return;
 				}
 
-				player_count = info.clients - info.bots;
 				listed_servers.emplace_back(info);
 			}
 
@@ -281,9 +279,6 @@ namespace server_list
 		{
 			std::lock_guard<std::mutex> _(mutex);
 			servers.emplace_back(std::move(server));
-			// we dont need these anymore
-			//sort_serverlist(list_sort_type);
-			//trigger_refresh();
 		}
 
 		bool is_server_list_open()
@@ -511,6 +506,7 @@ namespace server_list
 			getting_server_list = false;
 			ui_scripting::notify("updateGameList", {});
 			ui_scripting::notify("hideRefreshingNotification", {});
+			ui_scripting::notify("updateRefreshTimer", {});
 			display_error("MASTER SERVER ERROR!", "No response!");
 			return;
 		}
@@ -543,6 +539,7 @@ namespace server_list
 		interrupt_server_list = getting_server_list = false;
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
+		ui_scripting::notify("updateRefreshTimer", {});
 	}
 
 	void tcp::populate_server_list_threaded()
@@ -942,6 +939,7 @@ namespace server_list
 
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
+		ui_scripting::notify("updateRefreshTimer", {});
 	}
 
 	class component final : public component_interface
