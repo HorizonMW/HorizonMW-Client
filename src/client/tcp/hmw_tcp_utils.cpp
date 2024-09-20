@@ -380,12 +380,18 @@ namespace hmw_tcp_utils {
 
 				if (addPing) {
 					double totalTime = 0.0;
+					double connectTime = 0.0;
 
 					// Get the total time in seconds and convert to milliseconds
 					curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &totalTime);
-					int ping = static_cast<int>(totalTime * 1000.0);
+					int responseTime = static_cast<int>(totalTime * 1000.0);
 
-					// @Aphrodite, this is stupid. Why does the game display a ping of 0 as "999"
+					// Get the time taken for TCP connection setup (handshake)
+					curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &connectTime);
+					int overhead = static_cast<int>(connectTime * 1000.0);  // Convert to milliseconds
+
+					int ping = responseTime - overhead;
+
 					if (ping == 0) {
 						ping = 1;
 					}
