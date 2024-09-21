@@ -477,9 +477,9 @@ namespace ui_scripting
 				//server_list::sort_serverlist(sort_type);
 				  server_list::tcp::sort_current_page(sort_type);
 			};
-			server_list_table["isgettingserverlist"] = server_list::tcp::is_getting_server_list();
-			server_list_table["isgettingfavourites"] = server_list::tcp::is_getting_favourites();
-			server_list_table["isloadingpage"] = server_list::tcp::is_loading_a_page();
+			server_list_table["isgettingserverlist"] = server_list::tcp::is_getting_server_list;
+			server_list_table["isgettingfavourites"] = server_list::tcp::is_getting_favourites;
+			server_list_table["isloadingpage"] = server_list::tcp::is_loading_a_page;
 
 			auto download_table = table();
 			lua["download"] = download_table;
