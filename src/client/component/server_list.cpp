@@ -43,6 +43,7 @@ namespace server_list
 		std::mutex server_list_mutex;
 		std::condition_variable cv;
 		int active_threads = 0; // Count of active fetch threads
+		std::vector<std::thread> server_threads;
 
 		// Used for when we're refreshing the server / favourites list
 		bool getting_server_list = false;
@@ -615,19 +616,20 @@ namespace server_list
 
 			{
 				std::lock_guard<std::mutex> lock(server_list_mutex);
-				active_threads++; // Increment active thread count
+				active_threads++;  // Increment active thread count
 			}
 
-			// Create a thread for each server's info fetching
-			server_threads.emplace_back(fetch_game_server_info, connect_address, server_index, std::ref(server_list_mutex), std::ref(cv), std::ref(active_threads));
+			// Detach a thread to fetch game server info
+			std::thread([connect_address, server_index]() {
+				fetch_game_server_info(connect_address, server_index, std::ref(server_list_mutex), std::ref(cv), std::ref(active_threads));
+			}).detach();
+
 			server_index++;
 		}
 
 		// Wait for all threads to finish
-		{
-			std::unique_lock<std::mutex> lock(server_list_mutex);
-			cv.wait(lock, [] { return active_threads == 0; }); // Wait until all fetch threads are done
-		}
+		std::unique_lock<std::mutex> lock(server_list_mutex);
+		cv.wait(lock, [] { return active_threads == 0; });
 
 		load_page(0, false);
 		interrupt_server_list = getting_server_list = false;
