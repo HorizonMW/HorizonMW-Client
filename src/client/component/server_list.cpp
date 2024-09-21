@@ -41,7 +41,7 @@ namespace server_list
 
 		// Threading
 		std::mutex server_list_mutex;
-		std::condition_variable cv;
+		std::condition_variable server_list_cv;
 		int active_threads = 0; // Count of active fetch threads
 
 		// Used for when we're refreshing the server / favourites list
@@ -457,7 +457,7 @@ namespace server_list
 			std::lock_guard<std::mutex> lock(server_list_mutex);
 			active_threads--;
 		}
-		cv.notify_one(); // Notify that a thread has finished
+		server_list_cv.notify_one(); // Notify that a thread has finished
 	}
 
 	int get_player_count()
@@ -643,7 +643,7 @@ namespace server_list
 		}
 
 		std::unique_lock<std::mutex> lock(server_list_mutex);
-		cv.wait(lock, [] { return active_threads == 0; });
+		server_list_cv.wait(lock, [] { return active_threads == 0; });
 
 		load_page(0, false);
 		interrupt_server_list = getting_server_list = false;
