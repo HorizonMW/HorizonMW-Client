@@ -43,7 +43,6 @@ namespace server_list
 		std::mutex server_list_mutex;
 		std::condition_variable cv;
 		int active_threads = 0; // Count of active fetch threads
-		std::vector<std::thread> server_threads;
 
 		// Used for when we're refreshing the server / favourites list
 		bool getting_server_list = false;
