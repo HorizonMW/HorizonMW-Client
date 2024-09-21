@@ -37,8 +37,6 @@ namespace hmw_tcp_utils {
 	std::string getInfo_Json();
 	std::string GET_url(const char* url, bool addPing = false);
 
-	std::string GET_gameserver(const char* url);
-
 	size_t GET_url_WriteCallback(void* contents, size_t size, size_t nmemb, void* userp);
 #pragma endregion
 
