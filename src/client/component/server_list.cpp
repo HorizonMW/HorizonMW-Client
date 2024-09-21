@@ -1015,7 +1015,14 @@ namespace server_list
 		nlohmann::json obj;
 		if (!get_favourites_file(obj)) 
 		{
+			interrupt_favourites = false;
+			getting_favourites = false;
+
+			console::info("Finished getting favourites!");
+
 			ui_scripting::notify("updateGameList", {});
+			ui_scripting::notify("hideRefreshingNotification", {});
+			ui_scripting::notify("updateRefreshTimer", {});
 			return;
 		}
 
@@ -1049,7 +1056,8 @@ namespace server_list
 		}
 
 		load_page(0, false);
-		interrupt_favourites = getting_favourites = false;
+		interrupt_favourites = false;
+		getting_favourites = false;
 		
 		console::info("Finished getting favourites!");
 
