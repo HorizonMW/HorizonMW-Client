@@ -201,7 +201,7 @@ namespace hmw_voice_chat {
 					if (talker_client->team == game::TEAM_FREE && is_session_state_same(target_client, talker_client)) {
 						sv_queue_voice_packet(talker->s.number, other_player, packet);
 					}
-					
+
 					// Deathchat is enabled
 					if (sv_voice_deathchat_enabled())
 					{
@@ -362,7 +362,7 @@ namespace hmw_voice_chat {
 
 			return (client_state->num_players == 0 ? 18 : client_state->num_players);
 		}
-		
+
 		void cl_clear_muted_list()
 		{
 			std::memset(mute_list, 0, sizeof(mute_list));
@@ -400,7 +400,7 @@ namespace hmw_voice_chat {
 
 			game::NET_OutOfBandVoiceData(clc->netchan.sock, const_cast<game::netadr_s*>(&clc->serverAddress), msg.data, msg.cursize);
 		}
-	
+
 		bool is_player_talking(int client_num)
 		{
 			auto current_time = game::Sys_Milliseconds();
@@ -590,8 +590,7 @@ namespace hmw_voice_chat {
 		}
 
 		// Patoke @note: skip user registered checks related to voice chat
-		utils::hook::detour session_is_user_registered_hook;
-		bool session_is_user_registered_stub(void* session, int client_num)
+		bool session_is_user_registered_stub(void* session, char client_num)
 		{
 			auto ret = reinterpret_cast<uintptr_t>(_ReturnAddress());
 			// also should check cl_is_player_talking, but that's completely overwritten by one of our hooks
@@ -615,8 +614,7 @@ namespace hmw_voice_chat {
 				return true;
 			}
 
-			// Patoke @todo: does this break anything? if i call original i crash in virtualized/packed code
-			return false;//session_is_user_registered_hook.invoke<bool>(session, client_num);
+			return session_is_user_registered_hook.invoke<bool>(session, client_num);
 		}
 
 		// Patoke @note: allow us to modify mute states from the mute players menu
@@ -648,7 +646,7 @@ namespace hmw_voice_chat {
 			session_is_user_registered_hook.create(0x56B5C0_b, Client::session_is_user_registered_stub);
 			utils::hook::jump(0x135950_b, Client::cl_is_player_talking_stub, true);
 			utils::hook::jump(0x5BF7F0_b, Client::voice_is_xuid_talking_stub, true);
-			
+
 			// Patoke @note: unused hooks
 			//Client::cl_is_player_talking_hook.create(0x135950_b, Client::cl_is_player_talking_stub);
 			//Client::ui_get_talker_client_num_hook.create(0x1E0420_b, Client::ui_get_talker_client_num_stub);

@@ -58,7 +58,11 @@ namespace dedicated
 				return;
 			}
 
-			hmw_tcp_utils::MasterServer::send_heartbeat();
+			// send heartbeat asynchronously to master so we don't freeze the main game thread
+			scheduler::once([]()
+			{
+				hmw_tcp_utils::MasterServer::send_heartbeat();
+			}, scheduler::pipeline::async);
 		}
 
 		std::vector<std::string>& get_startup_command_queue()
@@ -208,7 +212,7 @@ namespace dedicated
 			printf("Starting dedicated server\n");
 
 			// Register dedicated dvar
-			dvars::register_bool("dedicated", true, game::DVAR_FLAG_READ, "Dedicated server");		
+			dvars::register_bool("dedicated", true, game::DVAR_FLAG_READ, "Dedicated server");
 
 			// Add lanonly mode
 			sv_lanOnly = dvars::register_bool("sv_lanOnly", false, game::DVAR_FLAG_NONE, "Don't send heartbeat");
@@ -328,10 +332,10 @@ namespace dedicated
 				if (game::Live_SyncOnlineDataFlags(0) == 32 && game::Sys_IsDatabaseReady2())
 				{
 					scheduler::once([]
-					{
-						command::execute("xstartprivateparty", true);
-						command::execute("disconnect", true); // 32 -> 0
-					}, scheduler::pipeline::main, 1s);
+						{
+							command::execute("xstartprivateparty", true);
+							command::execute("disconnect", true); // 32 -> 0
+						}, scheduler::pipeline::main, 1s);
 					return scheduler::cond_end;
 				}
 
@@ -367,8 +371,8 @@ namespace dedicated
 				}
 
 				// Send heartbeat to master
-				scheduler::once(send_heartbeat, scheduler::pipeline::async);
-				scheduler::loop(send_heartbeat, scheduler::pipeline::async, 2min);
+				scheduler::once(send_heartbeat, scheduler::pipeline::network);
+				scheduler::loop(send_heartbeat, scheduler::pipeline::network, 2min);
 				command::add("heartbeat", send_heartbeat);
 			}, scheduler::pipeline::main, 1s);
 

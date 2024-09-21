@@ -1222,8 +1222,8 @@ namespace game
 		PMEM_SOURCE_UNK7 = 0x7,
 		PMEM_SOURCE_UNK8 = 0x8,
 		PMEM_SOURCE_CUSTOMIZATION = 0x9,
-	}; 
-	
+	};
+
 	enum DemoType : std::int32_t
 	{
 		DEMO_TYPE_NONE = 0x0,
@@ -1303,25 +1303,25 @@ namespace game
 
 	struct PlayerWeaponCommonState
 	{
-		Weapon offHand;
-		Weapon lethalWeapon;
-		Weapon tacticalWeapon;
-		Weapon weapon;
-		int weapFlags;
-		float fWeaponPosFrac;
+		Weapon offHand; // 0x4c0 (size: 4, global: 0xbb43d50)
+		Weapon lethalWeapon; // 0x4c4 (size: 4, global: 0xbb44340)
+		Weapon tacticalWeapon; // 0x4c8 (size: 4, global: 0xbb44350)
+		Weapon weapon; // 0x4cc (size: 4, global: 0xbb43cd0)
+		int weapFlags; // 0x4d0 (size: 4, global: 0xbb43c50)
+		float fWeaponPosFrac; // 0x4d4 (size: 8, global: 0xbb43bb0)
 		float fPreviousWeaponPosFrac;
-		float aimSpreadScale;
-		int adsDelayTime;
-		int spreadOverride;
-		int spreadOverrideState;
-		float fAimSpreadMovementScale;
-		PlayerHandIndex lastWeaponHand;
+		float aimSpreadScale; // 0x4dc (size: 4, global: 0xbb43ab0)
+		int adsDelayTime; // 0x4e0 (size: 4, global: 0xbb449f0)
+		int spreadOverride; // 0x4e4 (size: 4, global: 0xbb448d0)
+		int spreadOverrideState; // 0x4e8 (size: 4, global: 0xbb448e0)
+		float fAimSpreadMovementScale; // 0x4ec (size: 4, global: 0xbb448f0)
+		PlayerHandIndex lastWeaponHand; // 0x4f0 (size: 544, global: 0xbb44320)
 		GlobalAmmo ammoNotInClip[15];
 		ClipAmmo ammoInClip[15];
-		int weapLockFlags;
-		__int16 weapLockedEntnum;
-		float weapLockedPos[3];
-		int weaponIdleTime;
+		int weapLockFlags; // 0x710 (size: 4, global: 0xbb44900)
+		int16_t weapLockedEntnum; // 0x714 (size: 4, global: 0xbb44910)
+		vec3_t weapLockedPos; // 0x718 (size: 12, global: 0xbb44920)
+		int weaponIdleTime; // 0x724 (size: 6092, global: 0xbb43aa0)
 		Weapon lastStowedWeapon;
 		PlayerWeaponAnimArrays weaponAnimArrays;
 	};
@@ -1491,14 +1491,9 @@ namespace game
 		unsigned int playerCardBackground;
 		unsigned __int8 use_elite_clan_tag;
 		char elite_clan_tag_text[5];
-		char __pad1[28];
-		// Patoke @note: not sure if these are right
-		//int elite_clan_level;
-		//int braggingRights;
-		//unsigned __int8 isMLGSpectator;
-		//int game_extrainfo;
-		//Material* rankIconHandle;
-		//const char* rankDisplayLevel;
+		int elite_clan_level;
+		char _pad1[20];
+		bool braggingRights;
 	};
 
 	struct usercmd_s
@@ -1562,90 +1557,268 @@ namespace game
 		int sprintStartMaxLength;
 	};
 
+	enum ViewLockTypes : std::int32_t
+	{
+		PLAYERVIEWLOCK_NONE = 0x0,
+		PLAYERVIEWLOCK_FULL = 0x1,
+		PLAYERVIEWLOCK_WEAPONJITTER = 0x2,
+		PLAYERVIEWLOCKCOUNT = 0x3,
+	};
+
+	enum ActionSlotType : std::int32_t
+	{
+		ACTIONSLOTTYPE_DONOTHING = 0x0,
+		ACTIONSLOTTYPE_SPECIFYWEAPON = 0x1,
+		ACTIONSLOTTYPE_ALTWEAPONTOGGLE = 0x2,
+		ACTIONSLOTTYPE_NIGHTVISION = 0x3,
+		ACTIONSLOTTYPECOUNT = 0x4,
+	};
+
+	enum DofPhysicalScriptingState : std::int32_t
+	{
+		DOF_PHYSICAL_SCRIPTING_DISABLED = 0x0,
+		DOF_PHYSICAL_SCRIPTING_HIP = 0x1,
+		DOF_PHYSICAL_SCRIPTING_ADS = 0x2,
+		DOF_PHYSICAL_SCRIPTING_BOTH = 0x3,
+		DOF_PHYSICAL_SCRIPTING_COUNT = 0x4,
+	};
+
+	enum objectiveState_t : std::int32_t
+	{
+		OBJST_EMPTY = 0x0,
+		OBJST_ACTIVE = 0x1,
+		OBJST_INVISIBLE = 0x2,
+		OBJST_DONE = 0x3,
+		OBJST_CURRENT = 0x4,
+		OBJST_FAILED = 0x5,
+		OBJST_NUMSTATES = 0x6,
+	};
+
+	enum ObjectiveVisMode : std::int32_t
+	{
+		OBJVIS_BYCLIENT = 0x0,
+		OBJVIS_BYTEAM = 0x1,
+		OBJVIS_BYMASK = 0x2,
+	};
+
+	struct ActionSlotParam_SpecifyWeapon
+	{
+		Weapon weapon;
+	};
+
+	struct ActionSlotParam
+	{
+		ActionSlotParam_SpecifyWeapon specifyWeapon;
+	};
+
+	struct ShieldState_s
+	{
+		int flags;
+	};
+
+	struct compressedAnimData_s
+	{
+		int flags;
+		int animRate;
+		int distanceIn2D;
+		int distanceOut2D;
+		int distanceInZ;
+		int distanceOutZ;
+		int endScriptAnimTableIndex;
+	};
+
+	struct MantleState
+	{
+		float yaw; // 0x264 (size: 4, global: 0xbb443f0)
+		int startPitch; // 0x268 (size: 4, global: 0xbb44400)
+		int transIndex; // 0x26c (size: 4, global: 0xbb443a0)
+		int flags; // 0x270 (size: 4, global: 0xbb442a0)
+		int startTime; // 0x274 (size: 4, global: 0xbb443b0)
+		vec3_t startPosition; // 0x278 (size: 12, global: 0xbb443c0)
+		compressedAnimData_s compressedAnimData; // 0x284 (size: 28, global: 0xbb44410)
+	};
+	struct PlayerVehicleState
+	{
+		int16_t entity; // 0xd8 (size: 4, global: 0xbb43ec0)
+		int flags; // 0xdc (size: 4, global: 0xbb43ed0)
+		int16_t targetEntity; // 0xe0 (size: 4, global: 0xbb43ee0)
+		vec3_t origin; // 0xe4 (size: 12, global: 0xbb43ef0)
+		vec3_t angles; // 0xf0 (size: 12, global: 0xbb43f20)
+		vec3_t velocity; // 0xfc (size: 12, global: 0xbb43f50)
+		vec3_t angVelocity; // 0x108 (size: 12, global: 0xbb43f80)
+		vec2_t tilt; // 0x114 (size: 8, global: 0xbb43fb0)
+		vec2_t tiltVelocity; // 0x11c (size: 8, global: 0xbb43fd0)
+		union
+		{
+			vec2_t gunAngles; // 0x124 (size: 4, global: 0xbb43ff0)
+			vec2_t wheelAngles;
+		};
+		unsigned int splineId; // 0x12c (size: 4, global: 0xbb44010)
+		unsigned int splineNodeIndex; // 0x130 (size: 4, global: 0xbb44020)
+		float splineLambda; // 0x134 (size: 4, global: 0xbb44030)
+		vec2_t corridorSpeeds; // 0x138 (size: 8, global: 0xbb44040)
+		int16_t orbitEnt; // 0x140 (size: 2, global: 0xbb44060)
+		int16_t orbitInitialEnt; // 0x142 (size: 2, global: 0xbb44070)
+		int16_t orbitLookAtEnt; // 0x144 (size: 4, global: 0xbb44080)
+		float orbitYawOffset; // 0x148 (size: 4, global: 0xbb44090)
+		float orbitZOffset; // 0x14c (size: 4, global: 0xbb440a0)
+		float hoverFrac; // 0x150 (size: 4, global: 0xbb440b0)
+		float maxSpeedThrottle; // 0x154 (size: 4, global: 0xbb440c0)
+	};
+	struct EntityEvent
+	{
+		int eventType;
+		int eventParm;
+	};
+
+	struct playerEvents_t
+	{
+		int eventSequence; // 0x158 (size: 4, global: 0xbb439e0)
+		EntityEvent events[4]; // 0x15c (size: 8, global: 0xbb43b40)
+		int oldEventSequence; // 0x17c (size: 32, global: 0xbb439f0)
+	};
+
+	// Patoke @note: offset, sizes, and the weird global stuff are for h1's leaked build with symbols for the ps4
+	// they were generated by dumping netfields and manually filtering, some stuff changed for the pc version, that's why u'll see some misplaced offsets
+	// the script used can be found here: https://github.com/Patoke/h1-reverse-tools/
 	struct playerState_s
 	{
-		char clientNum;
-		bool cursorHintDualWield;
-		uint8_t pm_type;
-		// Patoke @todo: one of these is messed up, idk which but i just removed this one
-		//uint8_t remoteEyesTagname;
-		uint8_t shellshockIndex;
-		uint8_t damageEvent;
-		uint8_t damageYaw;
-		uint8_t damagePitch;
-		uint8_t damageCount;
-		uint8_t damageFlags;
-		uint8_t cursorHint;
-		uint8_t meleeChargeDist;
-		uint8_t meleeServerResult;
-		uint8_t laserIndex;
-		uint8_t bobCycle;
-		char corpseIndex;
-		bool radarMode;
-		bool enemyRadarMode;
-		uint8_t perkSlots[9];
-		int16_t remoteEyesEnt;
-		int16_t remoteControlEnt;
-		int16_t throwbackGrenadeOwner;
-		int16_t viewlocked_entNum;
-		// Patoke @note: after this field, everything is 100% correct
-		int16_t groundEntityNum;
-		int16_t linkWeaponEnt;
-		int16_t cursorHintEntIndex;
-		int16_t meleeChargeEnt;
-		int16_t movingPlatformEntity;
-		int16_t groundRefEnt;
-		uint16_t loopSound;
-		int linkFlags;
-		int16_t remoteTurretEnt;
-		int16_t gravity;
-		int16_t speed;
-		uint16_t shellshockFlashDuration;
-		uint16_t shellshockMoveDuration;
-		uint16_t viewmodelIndex;
-		unsigned int cursorHintString;
-		int meleeChargeTime;
-		int shellshockTime;
-		int commandTime;
-		int pm_time;
-		int pm_flags;
-		int eFlags;
-		int otherFlags;
-		int foliageSoundTime;
-		int grenadeTimeLeft;
-		int throwbackGrenadeTimeLeft;
-		int varGrenadeSwitchTime;
-		int jumpTime;
-		float jumpOriginZ;
-		vec3_t origin;
-		vec3_t velocity;
-		vec3_t delta_angles;
-		vec3_t vLadderVec;
-		Weapon throwbackWeapon;
-		Weapon cursorHintWeapon;
-		int legsTimer;
-		int legsAnim;
-		int torsoTimer;
-		int torsoAnim;
-		int animMoveType;
-		char __pad4[104];
-		float viewangles[3];
-		char __pad5[128];
-		SprintState sprintState;
-		char __pad6[88];
-		PlayerActiveWeaponState weapState[NUM_WEAPON_HANDS];
+		char clientNum; // 0x0 (size: 1, global: 0xbb43dc0)
+		bool cursorHintDualWield; // 0x1 (size: 1, global: 0xbb44290)
+		uint8_t pm_type; // 0x2 (size: 1, global: 0xbb44170)
+		uint8_t remoteEyesTagname; // 0x3 (size: 1, global: 0xbb44730)
+		uint8_t shellshockIndex; // 0x4 (size: 1, global: 0xbb44300)
+		uint8_t damageEvent; // 0x5 (size: 1, global: 0xbb43e20)
+		uint8_t damageYaw; // 0x6 (size: 1, global: 0xbb43d70)
+		uint8_t damagePitch; // 0x7 (size: 1, global: 0xbb440d0)
+		uint8_t damageCount; // 0x8 (size: 1, global: 0xbb440e0)
+		uint8_t damageFlags; // 0x9 (size: 1, global: 0xbb446a0)
+		uint8_t cursorHint; // 0xa (size: 1, global: 0xbb43e30)
+		uint8_t meleeChargeDist; // 0xb (size: 1, global: 0xbb44610)
+		uint8_t meleeServerResult; // 0xc (size: 1, global: 0xbb44630)
+		uint8_t laserIndex; // 0xd (size: 1, global: 0xbb44a20)
+		char corpseIndex; // 0xf (size: 1, global: 0xbb441c0)
+		bool radarMode; // 0x10 (size: 1, global: 0xbb44770)
+		bool enemyRadarMode; // 0x11 (size: 1, global: 0xbb44780)
+		uint8_t perkSlots[9]; // 0x12 (size: 1, global: 0xbb44500)
+		int16_t remoteEyesEnt; // 0x1c (size: 2, global: 0xbb44720)
+		int16_t remoteControlEnt; // 0x1e (size: 2, global: 0xbb44740)
+		int16_t throwbackGrenadeOwner; // 0x20 (size: 2, global: 0xbb43d90)
+		int16_t viewlocked_entNum; // 0x22 (size: 2, global: 0xbb43dd0)
+		int16_t groundEntityNum; // 0x24 (size: 2, global: 0xbb43bc0)
+		int16_t linkWeaponEnt; // 0x26 (size: 2, global: 0xbb43e40)
+		int16_t cursorHintEntIndex; // 0x28 (size: 2, global: 0xbb44100)
+		int16_t meleeChargeEnt; // 0x2a (size: 2, global: 0xbb44620)
+		int16_t movingPlatformEntity; // 0x2c (size: 2, global: 0xbb444c0)
+		int16_t groundRefEnt; // 0x2e (size: 2, global: 0xbb44a10)
+		uint16_t loopSound; // 0x30 (size: 2, global: 0xbb44690)
+		int16_t linkFlags; // 0x32 (size: 2, global: 0xbb44650)
+		int16_t remoteTurretEnt; // 0x34 (size: 2, global: 0xbb44750)
+		int16_t gravity; // 0x36 (size: 2, global: 0xbb43df0)
+		int16_t speed; // 0x38 (size: 2, global: 0xbb44ab0)
+		uint16_t shellshockFlashDuration; // 0x3a (size: 2, global: 0xbb442e0)
+		uint16_t shellshockMoveDuration; // 0x3c (size: 2, global: 0xbb442f0)
+		uint16_t viewmodelIndex; // 0x3e (size: 2, global: 0xbb43d80)
+		unsigned int cursorHintString; // 0x40 (size: 4, global: 0xbb44130)
+		int meleeChargeTime; // 0x44 (size: 4, global: 0xbb445e0)
+		int shellshockTime; // 0x48 (size: 4, global: 0xbb442d0)
+		int commandTime; // 0x4c (size: 4, global: 0xbb439d0)
+		int pm_time; // 0x50 (size: 4, global: 0xbb43a50)
+		int pm_flags; // 0x54 (size: 4, global: 0xbb43a90)
+		int eFlags; // 0x58 (size: 4, global: 0xbb43be0)
+		int otherFlags; // 0x5c (size: 4, global: 0xbb43d60)
+		int foliageSoundTime; // 0x60 (size: 4, global: 0xbb447e0)
+		int grenadeTimeLeft; // 0x64 (size: 4, global: 0xbb44120)
+		int throwbackGrenadeTimeLeft; // 0x68 (size: 4, global: 0xbb44490)
+		int jumpTime; // 0x6c (size: 4, global: 0xbb44390)
+		float jumpOriginZ; // 0x70 (size: 4, global: 0xbb43bf0)
+		uint16_t bobCycle; // 0xe (size: 1, global: 0xbb43af0)
+		vec3_t origin; // 0x74 (size: 12, global: 0xbb43ac0)
+		vec3_t velocity; // 0x80 (size: 12, global: 0xbb43b10)
+		vec3_t delta_angles; // 0x8c (size: 12, global: 0xbb43e50)
+		vec3_t vLadderVec; // 0x98 (size: 12, global: 0xbb446b0)
+		Weapon throwbackWeapon; // 0xa4 (size: 4, global: 0xbb444a0)
+		Weapon cursorHintWeapon; // 0xa8 (size: 4, global: 0xbb44110)
+		int legsTimer; // 0xac (size: 4, global: 0xbb43a10)
+		int legsAnim; // 0xb0 (size: 4, global: 0xbb43a30)
+		int torsoTimer; // 0xb4 (size: 4, global: 0xbb43a20)
+		int torsoAnim; // 0xb8 (size: 4, global: 0xbb43ba0)
+		int animMoveType; // 0xbc (size: 4, global: 0xbb43a80)
+		int damageTimer; // 0xc0 (size: 4, global: 0xbb43ce0)
+		int movementDir; // 0xc4 (size: 4, global: 0xbb43b20)
+		int turnStartTime; // 0xc8 (size: 4, global: 0xbb43ca0)
+		int turnRemaining; // 0xcc (size: 4, global: 0xbb43c90)
+		int turnDirection; // 0xd0 (size: 4, global: 0xbb43cb0)
+		int flinch; // 0xd4 (size: 4, global: 0xbb440f0)
+		playerEvents_t pe; // 0x158 (size: 40, global: 0xbb439e0)
+		int unpredictableEventSequence; // 0x180 (size: 4, global: 0xbb43b80)
+		int unpredictableEventSequenceOld; // 0x184 (size: 4, global: 0xbb43b90)
+		EntityEvent unpredictableEvents[4]; // 0x188 (size: 32, global: 0xbb43d00)
+		float viewangles[3]; // 0x1a8 (size: 4, global: 0xbb43c20)
+		int viewHeightTarget; // 0x1b4 (size: 4, global: 0xbb43c60)
+		float viewHeightCurrent; // 0x1b8 (size: 4, global: 0xbb43bd0)
+		int viewHeightLerpTime; // 0x1bc (size: 4, global: 0xbb44260)
+		int viewHeightLerpTarget; // 0x1c0 (size: 4, global: 0xbb44160)
+		int viewHeightLerpDown; // 0x1c4 (size: 4, global: 0xbb44230)
+		vec2_t viewAngleClampBase; // 0x1c8 (size: 8, global: 0xbb44240)
+		vec2_t viewAngleClampRange; // 0x1d0 (size: 8, global: 0xbb444e0)
+		int stats[4];
+		float proneDirection; // 0x1e8 (size: 4, global: 0xbb44280)
+		float proneDirectionPitch; // 0x1ec (size: 4, global: 0xbb44600)
+		float proneTorsoPitch; // 0x1f0 (size: 4, global: 0xbb445f0)
+		ViewLockTypes viewlocked; // 0x1f4 (size: 4, global: 0xbb447f0)
+		vec3_t linkAngles; // 0x1f8 (size: 4, global: 0xbb446e0)
+		vec3_t linkWeaponAngles; // 0x204 (size: 4, global: 0xbb44660)
+		unsigned int cursorHintString2; // 0x210 (size: 4, global: 0xbb44140)
+		unsigned int cursorHintString3; // 0x214 (size: 4, global: 0xbb44150)
+		int iCompassPlayerInfo; // 0x218 (size: 4, global: 0xbb44810)
+		int radarEnabled; // 0x21c (size: 4, global: 0xbb441d0)
+		int enemyRadarEnabled; // 0x220 (size: 4, global: 0xbb44790)
+		int radarBlocked; // 0x224 (size: 4, global: 0xbb441e0)
+		int radarStrength; // 0x228 (size: 4, global: 0xbb441f0)
+		int radarShowEnemyDirection; // 0x22c (size: 4, global: 0xbb44200)
+		int locationSelectionInfo; // 0x234 (size: 4, global: 0xbb44590)
+		SprintState sprintState; // 0x238 (size: 20, global: 0xbb442c0)
+		float holdBreathScale; // 0x24c (size: 4, global: 0xbb43c30)
+		int holdBreathTimer; // 0x250 (size: 4, global: 0xbb447a0)
+		int stationaryZoomTimer; // 0x254 (size: 4, global: 0xbb447b0)
+		float stationaryZoomScale; // 0x258 (size: 4, global: 0xbb43c80)
+		float moveSpeedScaleMultiplier; // 0x25c (size: 4, global: 0xbb43da0)
+		float grenadeCookScale; // 0x260 (size: 4, global: 0xbb43db0)
+		MantleState mantleState; // 0x264 (size: 60, global: 0xbb443f0)
+		ShieldState_s shieldState; // 0x2a0 (size: 4, global: 0xbb44220)
+		PlayerActiveWeaponState weapState[NUM_WEAPON_HANDS]; // 0x2a4 (size: 4, global: 0xbb43a40)
 		Weapon weaponsEquipped[15]; // 604
 		PlayerEquippedWeaponState weapEquippedData[15]; // 664
-		PlayerWeaponCommonState weapCommon; // 904
+		PlayerWeaponCommonState weapCommon; // 0x4c0 (size: 4, global: 0xbb43d50)
 		unsigned int perks[4];
-		char __pad7[1452];
+		// Patoke @note: no idea if these are right, just added straight in for the lulz
+		ActionSlotType actionSlotType[4]; // 0x1f04 (size: 4, global: 0xbb44550)
+		ActionSlotParam actionSlotParam[4]; // 0x1f14 (size: 4, global: 0xbb445a0)
+		int16_t weaponHudIconOverrides[6]; // 0x1f24 (size: 12, global: 0xbb44820)
+		float viewKickScale; // 0x1f30 (size: 4, global: 0xbb44310)
+		int chargeTimer; // 0x1f34 (size: 4, global: 0xbb44aa0)
+		float dofNearStart; // 0x1f38 (size: 4, global: 0xbb44960)
+		float dofNearEnd; // 0x1f3c (size: 4, global: 0xbb445b0)
+		float dofFarStart; // 0x1f40 (size: 4, global: 0xbb445c0)
+		float dofFarEnd; // 0x1f44 (size: 4, global: 0xbb445d0)
+		float dofNearBlur; // 0x1f48 (size: 4, global: 0xbb43e00)
+		float dofFarBlur; // 0x1f4c (size: 4, global: 0xbb43e10)
+		float dofViewmodelStart; // 0x1f50 (size: 4, global: 0xbb44970)
+		float dofViewmodelEnd; // 0x1f54 (size: 4, global: 0xbb44980)
+		DofPhysicalScriptingState dofPhysicalScriptingState; // 0x1f58 (size: 4, global: 0xbb44a30)
+		float dofPhysicalFstop; // 0x1f5c (size: 4, global: 0xbb44a40)
+		float dofPhysicalFocusDistance; // 0x1f60 (size: 4, global: 0xbb44a50)
+		float dofPhysicalFocusSpeed; // 0x1f64 (size: 4, global: 0xbb44a60)
+		float dofPhysicalApertureSpeed; // 0x1f68 (size: 4, global: 0xbb44a70)
+		float dofPhysicalViewModelFstop; // 0x1f6c (size: 4, global: 0xbb44a80)
+		float dofPhysicalViewModelFocusDistance; // 0x1f70 (size: 1164, global: 0xbb44a90)
+		char _pad1[1340];
 		int deltaTime;
 		char size_pad2[9496];
 	};
 
 	static_assert(offsetof(playerState_s, pm_type) == 2);
-	static_assert(offsetof(playerState_s, groundEntityNum) == 34);
-	static_assert(offsetof(playerState_s, linkFlags) == 48);
 	static_assert(offsetof(playerState_s, pm_time) == 80);
 	static_assert(offsetof(playerState_s, pm_flags) == 84);
 	static_assert(offsetof(playerState_s, eFlags) == 88);
@@ -1654,11 +1827,29 @@ namespace game
 	static_assert(offsetof(playerState_s, velocity) == 132);
 	static_assert(offsetof(playerState_s, viewangles) == 300);
 	static_assert(offsetof(playerState_s, sprintState) == 440);
-	static_assert(offsetof(playerState_s, weapState) == 548); // not 564
+	static_assert(offsetof(playerState_s, weapState) == 548);
 	static_assert(offsetof(playerState_s, weapCommon.ammoInClip) == 1136);
 	static_assert(offsetof(playerState_s, perks) == 7608);
 	static_assert(offsetof(playerState_s, deltaTime) == 9076);
 	static_assert(sizeof(playerState_s) == 0x4890); // 18576
+
+	static_assert(offsetof(playerState_s, bobCycle) == 0x74);
+
+	static_assert(offsetof(playerState_s, locationSelectionInfo) == 0x1B4);
+	static_assert(offsetof(playerState_s, radarBlocked) == 0x1A8);
+	static_assert(offsetof(playerState_s, radarStrength) == 0x1AC);
+	static_assert(offsetof(playerState_s, cursorHintString2) == 0x194);
+	static_assert(offsetof(playerState_s, cursorHintString3) == 0x198);
+	static_assert(offsetof(playerState_s, cursorHintWeapon) == 0xAC);
+	static_assert(offsetof(playerState_s, gravity) == 0x34);
+	static_assert(offsetof(playerState_s, stats) == 0x15C);
+	static_assert(offsetof(playerState_s, viewHeightTarget) == 0x138);
+	static_assert(offsetof(playerState_s, viewHeightCurrent) == 0x13C);
+	static_assert(offsetof(playerState_s, perkSlots) == 0x11);
+	static_assert(offsetof(playerState_s, groundEntityNum) == 34);
+	static_assert(offsetof(playerState_s, linkFlags) == 48);
+	static_assert(offsetof(playerState_s, viewlocked_entNum) == 0x20);
+	static_assert(offsetof(playerState_s, movingPlatformEntity) == 0x2A);
 
 	struct snapshot_s
 	{
@@ -1785,7 +1976,9 @@ namespace game
 		short owner;
 		char _pad0[6];
 		gclient_s* client;
-		char _pad1[56];
+		char _pad6[8];
+		gclient_s* agent;
+		char _pad1[40];
 		scr_string_t script_classname;
 		char _pad2[20];
 		int flags;
@@ -1798,6 +1991,8 @@ namespace game
 		char _pad5[156];
 	}; // size = 736
 #pragma pack(pop)
+	static_assert(offsetof(gentity_s, client) == 0x158);
+	static_assert(offsetof(gentity_s, agent) == 0x168);
 	static_assert(offsetof(gentity_s, owner) == 0x150);
 	static_assert(sizeof(gentity_s) == 736);
 
@@ -1851,11 +2046,11 @@ namespace game
 		unsigned char numModels;
 		char __pad1[199];
 		XModel* models;
-	}; 
-		
+	};
+
 	static_assert(offsetof(DObj, models) == 216);
 
-	
+
 
 	struct Glyph
 	{
