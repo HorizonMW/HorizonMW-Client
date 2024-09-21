@@ -367,8 +367,8 @@ namespace dedicated
 				}
 
 				// Send heartbeat to master
-				scheduler::once(send_heartbeat, scheduler::pipeline::server);
-				scheduler::loop(send_heartbeat, scheduler::pipeline::server, 2min);
+				scheduler::once(send_heartbeat, scheduler::pipeline::async);
+				scheduler::loop(send_heartbeat, scheduler::pipeline::async, 2min);
 				command::add("heartbeat", send_heartbeat);
 			}, scheduler::pipeline::main, 1s);
 

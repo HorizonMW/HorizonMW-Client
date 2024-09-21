@@ -548,7 +548,7 @@ namespace server_list
 
 		// Don't lock this behind debug.
 //#ifdef _DEBUG
-		// @Aphrodite todo, update this to be dynamic and not hard coded to 27017
+		// @CB todo, update this to be dynamic and not hard coded to 27017
 		console::info("Checking if localhost server is running on default port (27017)");
 		std::string port = "27017"; // Change this to the dynamic port range @todo
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
