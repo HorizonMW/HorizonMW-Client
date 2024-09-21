@@ -39,6 +39,11 @@ namespace server_list
 		int current_page = 0;
 		bool is_loading_page = false;
 
+		// Threading
+		std::mutex server_list_mutex;
+		std::condition_variable cv;
+		int active_threads = 0; // Count of active fetch threads
+
 		// Used for when we're refreshing the server / favourites list
 		bool getting_server_list = false;
 		bool getting_favourites = false;
@@ -410,6 +415,32 @@ namespace server_list
 		return is_loading_page;
 	}
 
+	void tcp::fetch_game_server_info(const std::string& connect_address, int server_index, std::mutex& list_mutex, std::condition_variable& cv, int& active_threads) {
+		if (interrupt_server_list || interrupt_favourites) {
+			return;
+		}
+
+		std::string game_server_info = connect_address + "/getInfo";
+		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
+
+		if (!game_server_response.empty()) {
+			if (interrupt_server_list || interrupt_favourites) {
+				return; // We got interrupted mid request.
+			}
+
+			std::lock_guard<std::mutex> lock(list_mutex);
+			tcp::add_server_to_list(game_server_response, connect_address, server_index);
+			ui_scripting::notify("updateGameList", {});
+		}
+
+		// Lock and decrement the active thread count
+		{
+			std::lock_guard<std::mutex> lock(list_mutex);
+			active_threads--;
+		}
+		cv.notify_one(); // Notify that a thread has finished
+	}
+
 	int get_player_count()
 	{
 		std::lock_guard<std::mutex> _(mutex);
@@ -573,26 +604,29 @@ namespace server_list
 
 		nlohmann::json master_server_response_json = nlohmann::json::parse(master_server_list);
 
-		// Parse server list
-		for (const auto& element : master_server_response_json)
-		{
-			if (interrupt_server_list)
-			{
+		std::vector<std::thread> server_threads; // Vector to hold threads
+
+		for (const auto& element : master_server_response_json) {
+			if (interrupt_server_list) {
 				break;
 			}
 
-			std::string connect_address = element.get<std::string>(); 
-			std::string game_server_info = connect_address + "/getInfo";
-			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
-			
-			if (game_server_response.empty()) 
+			std::string connect_address = element.get<std::string>();
+
 			{
-				continue;
+				std::lock_guard<std::mutex> lock(server_list_mutex);
+				active_threads++; // Increment active thread count
 			}
 
-			tcp::add_server_to_list(game_server_response, connect_address, server_index);
-			ui_scripting::notify("updateGameList", {});
+			// Create a thread for each server's info fetching
+			server_threads.emplace_back(fetch_game_server_info, connect_address, server_index, std::ref(server_list_mutex), std::ref(cv), std::ref(active_threads));
 			server_index++;
+		}
+
+		// Wait for all threads to finish
+		{
+			std::unique_lock<std::mutex> lock(server_list_mutex);
+			cv.wait(lock, [] { return active_threads == 0; }); // Wait until all fetch threads are done
 		}
 
 		load_page(0, false);
