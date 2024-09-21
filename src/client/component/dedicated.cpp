@@ -162,9 +162,9 @@ namespace dedicated
 			va_end(ap);
 
 			scheduler::once([]
-				{
-					command::execute("map_rotate");
-				}, scheduler::main, 3s);
+			{
+				command::execute("map_rotate");
+			}, scheduler::main, 3s);
 
 			game::Com_Error(game::ERR_DROP, "%s", buffer);
 		}
@@ -230,16 +230,16 @@ namespace dedicated
 
 			// delay startup commands until the initialization is done
 			utils::hook::jump(0x157DD3_b, utils::hook::assemble([](utils::hook::assembler& a)
-				{
-					a.lea(r8, qword_ptr(rsp, 0x20));
-					a.xor_(ecx, ecx);
+			{
+				a.lea(r8, qword_ptr(rsp, 0x20));
+				a.xor_(ecx, ecx);
 
-					a.pushad64();
-					a.call_aligned(execute_startup_command);
-					a.popad64();
+				a.pushad64();
+				a.call_aligned(execute_startup_command);
+				a.popad64();
 
-					a.jmp(0x157DDF_b);
-				}), true);
+				a.jmp(0x157DDF_b);
+			}), true);
 
 			// delay console commands until the initialization is done // COULDN'T FOUND
 			// utils::hook::call(0x1400D808C, execute_console_command);
@@ -328,53 +328,53 @@ namespace dedicated
 
 			// initialize the game after onlinedataflags is 32 (workaround)
 			scheduler::schedule([=]()
+			{
+				if (game::Live_SyncOnlineDataFlags(0) == 32 && game::Sys_IsDatabaseReady2())
 				{
-					if (game::Live_SyncOnlineDataFlags(0) == 32 && game::Sys_IsDatabaseReady2())
-					{
-						scheduler::once([]
-							{
-								command::execute("xstartprivateparty", true);
-								command::execute("disconnect", true); // 32 -> 0
-							}, scheduler::pipeline::main, 1s);
-						return scheduler::cond_end;
-					}
+					scheduler::once([]
+						{
+							command::execute("xstartprivateparty", true);
+							command::execute("disconnect", true); // 32 -> 0
+						}, scheduler::pipeline::main, 1s);
+					return scheduler::cond_end;
+				}
 
-					return scheduler::cond_continue;
-				}, scheduler::pipeline::main, 1s);
+				return scheduler::cond_continue;
+			}, scheduler::pipeline::main, 1s);
 
 			scheduler::once([]()
-				{
-					dvars::register_string("sv_serverkey", "", game::DVAR_FLAG_NONE, "Server key to authenticate to server list");
-				}, scheduler::pipeline::main);
+			{
+				dvars::register_string("sv_serverkey", "", game::DVAR_FLAG_NONE, "Server key to authenticate to server list");
+			}, scheduler::pipeline::main);
 
 			scheduler::on_game_initialized([]
-				{
-					initialize();
+			{
+				initialize();
 
-					console::info("==================================\n");
-					console::info("Server started!\n");
-					console::info("==================================\n");
+				console::info("==================================\n");
+				console::info("Server started!\n");
+				console::info("==================================\n");
 
-					// remove disconnect command
-					game::Cmd_RemoveCommand("disconnect");
+				// remove disconnect command
+				game::Cmd_RemoveCommand("disconnect");
 
-					execute_startup_command_queue();
-					execute_console_command_queue();
+				execute_startup_command_queue();
+				execute_console_command_queue();
 
-					bool dedicated = game::environment::is_dedi();
-					std::cout << "Dedicated: " << std::to_string(dedicated) << std::endl;
+				bool dedicated = game::environment::is_dedi();
+				std::cout << "Dedicated: " << std::to_string(dedicated) << std::endl;
 
-					if (dedicated) {
-						std::string port = utils::string::va("%i", get_dvar_int("net_port"));
-						const std::string url = "http://0.0.0.0:" + port;
-						hmw_tcp_utils::GameServer::start_server(url.c_str());
-					}
+				if (dedicated) {
+					std::string port = utils::string::va("%i", get_dvar_int("net_port"));
+					const std::string url = "http://0.0.0.0:" + port;
+					hmw_tcp_utils::GameServer::start_server(url.c_str());
+				}
 
-					// Send heartbeat to master
-					scheduler::once(send_heartbeat, scheduler::pipeline::server);
-					scheduler::loop(send_heartbeat, scheduler::pipeline::server, 2min);
-					command::add("heartbeat", send_heartbeat);
-				}, scheduler::pipeline::main, 1s);
+				// Send heartbeat to master
+				scheduler::once(send_heartbeat, scheduler::pipeline::server);
+				scheduler::loop(send_heartbeat, scheduler::pipeline::server, 2min);
+				command::add("heartbeat", send_heartbeat);
+			}, scheduler::pipeline::main, 1s);
 
 			command::add("killserver", kill_server);
 			com_quit_f_hook.create(0x17CD00_b, kill_server);

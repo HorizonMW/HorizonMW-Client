@@ -422,7 +422,6 @@ namespace movement
 			// glides (thank you @girlmachinery for the help on this)
 			start_weapon_anim_hook.create(0x1D5CA0_b, start_weapon_anim_stub);
 
-			// Patoke @todo: adapt these properly for h2m
 			pm_weapon_check_for_sprint_hook.create(0x2D9A10_b, pm_weapon_check_for_sprint_stub);
 			pm_sprint_ending_buttons_hook.create(0x2CEE40_b, pm_sprint_ending_buttons_stub);
 
