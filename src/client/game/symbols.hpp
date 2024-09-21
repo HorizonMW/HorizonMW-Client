@@ -29,7 +29,7 @@ namespace game
 	WEAK symbol<bool(int localClient, ScreenPlacement* scrPlace, vec3_t& WorldLocation, vec2_t& Screen)> CG_WorldPosToScreenPosReal{ 0x307AD0 };
 	WEAK symbol<int(const char* perkName)> BG_GetPerkCodeIndexForName{ 0x2C6270 };
 	WEAK symbol<int(playerState_s* ps)> BG_PlayerLastWeaponHand{ 0x2E95F0 };
-	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintInTime{ 0x2EB640 };
+	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintInTime{ 0x2EB5C0 };
 	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintOutTime{ 0x2EB640 };
 	WEAK symbol<void(playerState_s* ps, PlayerHandIndex hand)> PM_SetReloadingState{ 0x2D66D0 };
 

@@ -652,7 +652,7 @@ namespace server_list
 		{
 			getting_server_list = true;
 			populate_server_list();
-		}, scheduler::pipeline::async);
+		}, scheduler::pipeline::network);
 	}
 
 	void tcp::parse_favourites_tcp_threaded()
@@ -669,7 +669,7 @@ namespace server_list
 		{
 			getting_favourites = true;
 			parse_favourites_tcp();
-		}, scheduler::pipeline::async);
+		}, scheduler::pipeline::network);
 	}
 
 	int tcp::get_server_limit_per_page()
