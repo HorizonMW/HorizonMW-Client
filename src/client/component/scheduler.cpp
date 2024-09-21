@@ -84,7 +84,8 @@ namespace scheduler
 		};
 
 		volatile bool kill = false;
-		std::thread thread;
+		std::thread thread_async;
+		std::thread network_thread;
 		task_pipeline pipelines[pipeline::count];
 		utils::hook::detour r_end_frame_hook;
 		utils::hook::detour g_run_frame_hook;
@@ -183,12 +184,21 @@ namespace scheduler
 	public:
 		void post_start() override
 		{
-			thread = utils::thread::create_named_thread("Async Scheduler", []()
+			thread_async = utils::thread::create_named_thread("Async Scheduler", []()
 			{
 				while (!kill)
 				{
 					execute(pipeline::async);
 					std::this_thread::sleep_for(10ms);
+				}
+			});
+
+			network_thread = std::thread([]()
+			{
+				while (!kill)
+				{
+					execute(pipeline::network);
+					std::this_thread::sleep_for(std::chrono::milliseconds(50));
 				}
 			});
 		}
@@ -216,9 +226,14 @@ namespace scheduler
 		void pre_destroy() override
 		{
 			kill = true;
-			if (thread.joinable())
+			if (thread_async.joinable())
 			{
-				thread.join();
+				thread_async.join();
+			}
+
+			if (network_thread.joinable())
+			{
+				network_thread.join();
 			}
 		}
 	};
