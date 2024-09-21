@@ -145,7 +145,7 @@ namespace server_list
 
 		void refresh_server_list()
 		{
-			if (tcp::is_loading_page) {
+			if (tcp::getting_server_list || tcp::getting_favourites || tcp::is_loading_page) {
 				return;
 			}
 
@@ -352,6 +352,10 @@ namespace server_list
 	}
 
 	void tcp::sort_current_page(int sort_type) {
+		if (getting_server_list || getting_favourites || is_loading_page) {
+			return;
+		}
+
 		auto servers_cache = servers;
 
 		{
@@ -389,6 +393,21 @@ namespace server_list
 			}
 			ui_scripting::notify("updateGameList", {});
 		}, scheduler::pipeline::main, 125ms);
+	}
+
+	bool tcp::is_getting_server_list()
+	{
+		return getting_server_list;
+	}
+
+	bool tcp::is_getting_favourites()
+	{
+		return getting_favourites;
+	}
+
+	bool tcp::is_loading_a_page()
+	{
+		return is_loading_page;
 	}
 
 	int get_player_count()
@@ -527,7 +546,8 @@ namespace server_list
 
 		int server_index = 0;
 
-#ifdef _DEBUG
+		// Don't lock this behind debug.
+//#ifdef _DEBUG
 		// @Aphrodite todo, update this to be dynamic and not hard coded to 27017
 		console::info("Checking if localhost server is running on default port (27017)");
 		std::string port = "27017"; // Change this to the dynamic port range @todo
@@ -538,7 +558,7 @@ namespace server_list
 			ui_scripting::notify("updateGameList", {});
 			server_index++;
 		}
-#endif
+//#endif
 
 		// Master server did not respond
 		if (master_server_list.empty()) {
@@ -683,7 +703,7 @@ namespace server_list
 
 	void tcp::next_page()
 	{
-		if (is_loading_page) {
+		if (getting_server_list || getting_favourites || is_loading_page) {
 			return;
 		}
 
@@ -697,7 +717,7 @@ namespace server_list
 
 	void tcp::previous_page()
 	{
-		if (is_loading_page) {
+		if (getting_server_list || getting_favourites || is_loading_page) {
 			return;
 		}
 

@@ -81,5 +81,10 @@ namespace server_list
 
 		void sort_current_page(int sort_type);
 
+		// Functions to pass these to lua
+		bool is_getting_server_list();
+		bool is_getting_favourites();
+		bool is_loading_a_page();
+
 	}
 }
