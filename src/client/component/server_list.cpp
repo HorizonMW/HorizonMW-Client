@@ -288,20 +288,20 @@ namespace server_list
 
 		void insert_server(server_info&& server)
 		{
+			// Do not exceed the server limit
 			if (servers.size() >= tcp::server_limit_per_page) {
 				return;
 			}
 
 			std::lock_guard<std::mutex> _(mutex);
 
-			// Check if a server with the same connect_address already exists
+			// Duplicate handling
 			auto it = std::find_if(servers.begin(), servers.end(),
 				[&server](const server_info& existing_server) {
 					return existing_server.connect_address == server.connect_address;
 				});
 
 			if (it == servers.end()) {
-				// If the server is not already in the list, insert it
 				servers.emplace_back(std::move(server));
 			}
 		}
