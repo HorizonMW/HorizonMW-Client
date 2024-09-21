@@ -295,12 +295,12 @@ namespace movement
 					&& weaponStateRight != game::WEAPON_OFFHAND_INIT && weaponStateRight != game::WEAPON_OFFHAND_PREPARE && weaponStateRight != game::WEAPON_OFFHAND_HOLD && weaponStateRight != game::WEAPON_OFFHAND_HOLD_PRIMED && weaponStateRight != game::WEAPON_OFFHAND_END
 					)
 				{
-					// 0x40 = PM_FLAG_SPRINTING
-					if (((pm->ps->pm_flags & 0x40) != 0) && (weaponStateRight != game::WEAPON_SPRINT_RAISE && weaponStateRight != game::WEAPON_SPRINT_LOOP && weaponStateRight != game::WEAPON_SPRINT_DROP))
+					// 0x4000 = PM_FLAG_SPRINTING
+					if (((pm->ps->pm_flags & 0x4000) != 0) && (weaponStateRight != game::WEAPON_SPRINT_RAISE && weaponStateRight != game::WEAPON_SPRINT_LOOP && weaponStateRight != game::WEAPON_SPRINT_DROP))
 					{
 						sprint_raise(pm);
 					}
-					else if (((pm->ps->pm_flags & 0x40) == 0) && (weaponStateRight == game::WEAPON_SPRINT_RAISE || weaponStateRight == game::WEAPON_SPRINT_LOOP))
+					else if (((pm->ps->pm_flags & 0x4000) == 0) && (weaponStateRight == game::WEAPON_SPRINT_RAISE || weaponStateRight == game::WEAPON_SPRINT_LOOP))
 					{
 						sprint_drop(pm);
 					}
@@ -322,7 +322,7 @@ namespace movement
 				return true;
 			}
 
-			int v5 = ps->perkSlots[1] & 1;
+			int v5 = ps->perks[3] & 1;
 			int v6 = (0xCF0D - (v5 != 0)) & 0xFFFFFDCF | 0x30;
 
 			if ((ps->perks[1] & 0x40000000) == 0)
@@ -338,9 +338,9 @@ namespace movement
 				return true;
 			}
 
-			bool is_in_melee_or_nade_throw = (weaponState - game::WEAPON_MELEE_WAIT_FOR_RESULT) <= game::WEAPON_OFFHAND_END;
-			bool is_in_nightvision_equip = (weaponState - game::WEAPON_NIGHTVISION_WEAR) <= game::WEAPON_NIGHTVISION_REMOVE;
-			bool is_in_blast_or_hybrid_scope = (weaponState - game::WEAPON_BLAST_IMPACT) <= game::WEAPON_HYBRID_SIGHT_OUT;
+			bool is_in_melee_or_nade_throw = (weaponState - game::WEAPON_MELEE_WAIT_FOR_RESULT) <= (game::WEAPON_OFFHAND_END - game::WEAPON_MELEE_WAIT_FOR_RESULT);
+			bool is_in_nightvision_equip = (weaponState - game::WEAPON_NIGHTVISION_WEAR) <= (game::WEAPON_NIGHTVISION_REMOVE - game::WEAPON_NIGHTVISION_WEAR);
+			bool is_in_blast_or_hybrid_scope = (weaponState - game::WEAPON_BLAST_IMPACT) <= (game::WEAPON_HEAT_COOLDOWN_START - game::WEAPON_BLAST_IMPACT);
 
 			return is_in_melee_or_nade_throw || is_in_nightvision_equip || is_in_blast_or_hybrid_scope;
 		}
@@ -423,8 +423,8 @@ namespace movement
 			start_weapon_anim_hook.create(0x1D5CA0_b, start_weapon_anim_stub);
 
 			// Patoke @todo: adapt these properly for h2m
-			//pm_weapon_check_for_sprint_hook.create(0x2D9A10_b, pm_weapon_check_for_sprint_stub);
-			//pm_sprint_ending_buttons_hook.create(0x2CEE40_b, pm_sprint_ending_buttons_stub);
+			pm_weapon_check_for_sprint_hook.create(0x2D9A10_b, pm_weapon_check_for_sprint_stub);
+			pm_sprint_ending_buttons_hook.create(0x2CEE40_b, pm_sprint_ending_buttons_stub);
 
 			// force_play_weap_anim(anim_id, both_hands)
 			gsc::method::add("force_play_weap_anim", [](const game::scr_entref_t ent, const gsc::function_args& args)
