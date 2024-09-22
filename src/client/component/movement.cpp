@@ -241,7 +241,7 @@ namespace movement
 
 				if (ps->pm_type != game::PM_DEAD && ps->pm_type != game::PM_DEAD_LINKED)
 				{
-					ps->weapState[i].weapAnim = (game::WEAP_ANIM_SPEED_RELOAD | (ps->weapState[i].weaponState) & ANIM_TOGGLEBIT);
+					ps->weapState[i].weapAnim = ps->weapState[i].weaponState & ANIM_TOGGLEBIT | game::WEAP_ANIM_SPEED_RELOAD;
 				}
 			}
 		}
@@ -259,7 +259,7 @@ namespace movement
 
 				if (ps->pm_type != game::PM_DEAD && ps->pm_type != game::PM_DEAD_LINKED)
 				{
-					ps->weapState[i].weapAnim = (game::WEAP_ANIM_SPRINT_IN | (ps->weapState[i].weaponState) & ANIM_TOGGLEBIT);
+					ps->weapState[i].weapAnim = ps->weapState[i].weaponState & ANIM_TOGGLEBIT | game::WEAP_ANIM_FAST_RELOAD_END;
 				}
 
 				if (ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT)
