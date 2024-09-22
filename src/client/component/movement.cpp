@@ -239,7 +239,7 @@ namespace movement
 				ps->weapState[i].weaponTime = game::BG_SprintOutTime(ps->weapCommon.weapon, false, ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT);
 				ps->weapState[i].weaponDelay = 0;
 
-				if ((BYTE)ps->pm_type < 7u)
+				if (ps->pm_type != game::PM_DEAD && ps->pm_type != game::PM_DEAD_LINKED)
 				{
 					ps->weapState[i].weapAnim = (game::WEAP_ANIM_SPEED_RELOAD | (ps->weapState[i].weaponState) & ANIM_TOGGLEBIT);
 				}
@@ -257,8 +257,10 @@ namespace movement
 				ps->weapState[i].weaponTime = game::BG_SprintInTime(ps->weapCommon.weapon, false, ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT);
 				ps->weapState[i].weaponDelay = 0;
 
-				if ((BYTE)ps->pm_flags < 7u)
-					ps->weapState[i].weapAnim = (ps->weapState[i].weaponState) & 0x800 | 0x1Fu;
+				if (ps->pm_type != game::PM_DEAD && ps->pm_type != game::PM_DEAD_LINKED)
+				{
+					ps->weapState[i].weapAnim = (game::WEAP_ANIM_SPRINT_IN | (ps->weapState[i].weaponState) & ANIM_TOGGLEBIT);
+				}
 
 				if (ps->weapCommon.lastWeaponHand == game::WEAPON_HAND_LEFT)
 				{
@@ -295,12 +297,11 @@ namespace movement
 					&& weaponStateRight != game::WEAPON_OFFHAND_INIT && weaponStateRight != game::WEAPON_OFFHAND_PREPARE && weaponStateRight != game::WEAPON_OFFHAND_HOLD && weaponStateRight != game::WEAPON_OFFHAND_HOLD_PRIMED && weaponStateRight != game::WEAPON_OFFHAND_END
 					)
 				{
-					// 0x4000 = PM_FLAG_SPRINTING
-					if (((pm->ps->pm_flags & 0x4000) != 0) && (weaponStateRight != game::WEAPON_SPRINT_RAISE && weaponStateRight != game::WEAPON_SPRINT_LOOP && weaponStateRight != game::WEAPON_SPRINT_DROP))
+					if (((pm->ps->pm_flags & game::PMF_SPRINTING) != 0) && (weaponStateRight != game::WEAPON_SPRINT_RAISE && weaponStateRight != game::WEAPON_SPRINT_LOOP && weaponStateRight != game::WEAPON_SPRINT_DROP))
 					{
 						sprint_raise(pm);
 					}
-					else if (((pm->ps->pm_flags & 0x4000) == 0) && (weaponStateRight == game::WEAPON_SPRINT_RAISE || weaponStateRight == game::WEAPON_SPRINT_LOOP))
+					else if (((pm->ps->pm_flags & game::PMF_SPRINTING) == 0) && (weaponStateRight == game::WEAPON_SPRINT_RAISE || weaponStateRight == game::WEAPON_SPRINT_LOOP))
 					{
 						sprint_drop(pm);
 					}
@@ -317,7 +318,7 @@ namespace movement
 		utils::hook::detour pm_sprint_ending_buttons_hook;
 		bool pm_sprint_ending_buttons_stub(game::playerState_s* ps, int8_t forwardSpeed, int buttons)
 		{
-			if ((ps->pm_flags & 0x8018) != 0 || forwardSpeed <= 105)
+			if ((ps->pm_flags & (game::POF_PLAYER | game::POF_THERMAL_VISION_OVERLAY_FOF | game::POF_THERMAL_VISION)) != 0 || forwardSpeed <= 105)
 			{
 				return true;
 			}
