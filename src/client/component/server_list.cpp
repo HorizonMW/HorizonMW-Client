@@ -392,7 +392,7 @@ namespace server_list
 		return is_loading_page;
 	}
 
-	void tcp::fetch_game_server_info(const std::string& connect_address, int server_index) {
+	void tcp::fetch_game_server_info(const std::string& connect_address, int* server_index) {
 		if (interrupt_server_list || interrupt_favourites) {
 			return;
 		}
@@ -405,9 +405,13 @@ namespace server_list
 				return; // We got interrupted mid request.
 			}
 
-			std::lock_guard<std::mutex> lock(server_list_mutex);
-			tcp::add_server_to_list(game_server_response, connect_address, server_index);
-			ui_scripting::notify("updateGameList", {});
+			{
+				// Lock access to the server list and server_index
+				std::lock_guard<std::mutex> lock(server_list_mutex);
+				tcp::add_server_to_list(game_server_response, connect_address, *server_index);
+				ui_scripting::notify("updateGameList", {});
+				(*server_index)++; // Increment after adding to the list
+			}
 		}
 
 		// Lock and decrement the active thread count
@@ -584,11 +588,9 @@ namespace server_list
 				active_threads++;
 			}
 
-			std::thread([connect_address, server_index]() {
-				fetch_game_server_info(connect_address, server_index);
+			std::thread([connect_address, &server_index]() {
+				fetch_game_server_info(connect_address, &server_index);
 			}).detach();
-
-			server_index++;
 		}
 
 		std::unique_lock<std::mutex> lock(server_list_mutex);
@@ -1001,11 +1003,9 @@ namespace server_list
 			}
 
 			// Detach a thread to fetch game server info
-			std::thread([connect_address, server_index]() {
-				fetch_game_server_info(connect_address, server_index);
+			std::thread([connect_address, &server_index]() {
+				fetch_game_server_info(connect_address, &server_index);
 			}).detach();
-
-			server_index++;
 		}
 
 		load_page(0, false);
