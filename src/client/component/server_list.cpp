@@ -107,6 +107,7 @@ namespace server_list
 			sort_type_mode = 3,
 			sort_type_players = 4,
 			sort_type_ping = 5,
+			sort_type_outdated = 6
 		};
 
 		struct
@@ -359,6 +360,9 @@ namespace server_list
 					return (a.clients - a.bots) > (b.clients - b.bots);
 				case sort_type_ping: // sort by smallest ping
 					return a.ping < b.ping;
+				case sort_type_outdated:
+					// Sort by outdated status, with outdated servers coming last
+					return a.outdated == b.outdated ? false : a.outdated > b.outdated;
 			}
 				return true;
 			});
@@ -529,7 +533,8 @@ namespace server_list
 
 	void tcp::populate_server_list()
 	{
-		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server());
+		// Get the master server. Give it a time out of 10 seconds.
+		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L);
 
 		// An error message is visible. We want to hide it now.
 		if (error_is_displayed)
@@ -543,8 +548,6 @@ namespace server_list
 
 		int server_index = 0;
 
-		// Don't lock this behind debug.
-//#ifdef _DEBUG
 		// @CB todo, update this to be dynamic and not hard coded to 27017
 		console::info("Checking if localhost server is running on default port (27017)");
 		std::string port = "27017"; // Change this to the dynamic port range @todo
@@ -555,7 +558,12 @@ namespace server_list
 			ui_scripting::notify("updateGameList", {});
 			server_index++;
 		}
-//#endif
+
+		// CB testing Laptop
+		std::string test = hmw_tcp_utils::GET_url("192.168.0.72:27017/getInfo", true);
+		add_server_to_list(test, "192.168.0.72:27017", server_index);
+		ui_scripting::notify("updateGameList", {});
+		server_index++;
 
 		// Master server did not respond
 		if (master_server_list.empty()) {
@@ -914,7 +922,7 @@ namespace server_list
 		}
 
 		std::string gameversion = game_server_response_json.value("gameversion", "Unknown");
-		bool outdated = true; //gameversion == hmw_tcp_utils::get_version();
+		bool outdated = gameversion != hmw_tcp_utils::get_version();
 
 		game::netadr_s address{};
 		if (game::NET_StringToAdr(connect_address.c_str(), &address))
