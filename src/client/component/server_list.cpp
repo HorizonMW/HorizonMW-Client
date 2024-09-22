@@ -107,6 +107,7 @@ namespace server_list
 			sort_type_mode = 3,
 			sort_type_players = 4,
 			sort_type_ping = 5,
+			sort_type_outdated = 6
 		};
 
 		struct
@@ -214,11 +215,6 @@ namespace server_list
 			}
 		}
 
-		void trigger_refresh()
-		{
-			ui_scripting::notify("updateGameList", {});
-		}
-
 		int ui_feeder_count()
 		{
 			std::lock_guard<std::mutex> _(mutex);
@@ -239,7 +235,15 @@ namespace server_list
 			switch (column)
 			{
 			case 0:
-				return servers[i].host_name.empty() ? "" : servers[i].host_name.data();
+			{
+				if (servers[i].host_name.empty()) {
+					return "";
+				}
+
+				auto name = servers[i].host_name.data();
+				auto outdated_name = utils::string::va("^1[Outdated] %s", name);
+				return servers[i].outdated ? outdated_name : name;
+			}
 			case 1:
 			{
 				const auto& map_name = servers[i].map_name;
@@ -326,55 +330,6 @@ namespace server_list
 		}
 	}
 
-	void sort_serverlist(int sort_type)
-	{
-		list_sort_type = sort_type;
-		
-		std::vector<server_info> to_sort;
-
-		for (auto& page : server_list::tcp::pages) 
-		{
-			for (server_info& server : page.listed_servers)
-			{
-				to_sort.push_back(server);
-			}
-		}
-
-		std::stable_sort(to_sort.begin(), to_sort.end(), [sort_type](const server_info& a, const server_info& b)
-		{
-			switch (sort_type)
-			{
-			case sort_type_unknown:
-				// Patoke @todo: what is this doing and why does it exist?
-				break;
-			case sort_type_hostname:
-				return a.host_name.compare(b.host_name) < 0;
-			case sort_type_map:
-				return a.map_name.compare(b.map_name) < 0;
-			case sort_type_mode:
-				return a.game_type.compare(b.game_type) < 0;
-			case sort_type_players: // sort by most players
-				return (a.clients - a.bots) > (b.clients - b.bots);
-			case sort_type_ping: // sort by smallest ping
-				return a.ping < b.ping; 
-			}
-
-			return true;
-		});
-
-		// This needs reworking
-		// Clear pages
-		tcp::pages.clear();
-
-		int server_index = 0;
-		for (server_info& server : to_sort) 
-		{
-			int page_number = tcp::get_page_number(server_index) - 1;
-			tcp::add_server_to_page(page_number, server);
-			server_index++;
-		}
-	}
-
 	void tcp::sort_current_page(int sort_type) {
 		if (getting_server_list || getting_favourites || is_loading_page) {
 			return;
@@ -405,6 +360,9 @@ namespace server_list
 					return (a.clients - a.bots) > (b.clients - b.bots);
 				case sort_type_ping: // sort by smallest ping
 					return a.ping < b.ping;
+				case sort_type_outdated:
+					// Sort by outdated status, with outdated servers coming last
+					return a.outdated == b.outdated ? false : a.outdated > b.outdated;
 			}
 				return true;
 			});
@@ -434,7 +392,7 @@ namespace server_list
 		return is_loading_page;
 	}
 
-	void tcp::fetch_game_server_info(const std::string& connect_address, int server_index) {
+	void tcp::fetch_game_server_info(const std::string& connect_address, int* server_index) {
 		if (interrupt_server_list || interrupt_favourites) {
 			return;
 		}
@@ -447,9 +405,13 @@ namespace server_list
 				return; // We got interrupted mid request.
 			}
 
-			std::lock_guard<std::mutex> lock(server_list_mutex);
-			tcp::add_server_to_list(game_server_response, connect_address, server_index);
-			ui_scripting::notify("updateGameList", {});
+			{
+				// Lock access to the server list and server_index
+				std::lock_guard<std::mutex> lock(server_list_mutex);
+				tcp::add_server_to_list(game_server_response, connect_address, *server_index);
+				ui_scripting::notify("updateGameList", {});
+				(*server_index)++; // Increment after adding to the list
+			}
 		}
 
 		// Lock and decrement the active thread count
@@ -573,16 +535,10 @@ namespace server_list
 		refresh_server_list();
 	}
 
-	void sort_servers(int sort_type)
-	{
-		std::lock_guard<std::mutex> _(mutex);
-		sort_serverlist(list_sort_type);
-		trigger_refresh();
-	}
-
 	void tcp::populate_server_list()
 	{
-		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server());
+		// Get the master server. Give it a time out of 10 seconds.
+		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L);
 
 		// An error message is visible. We want to hide it now.
 		if (error_is_displayed)
@@ -596,8 +552,6 @@ namespace server_list
 
 		int server_index = 0;
 
-		// Don't lock this behind debug.
-//#ifdef _DEBUG
 		// @CB todo, update this to be dynamic and not hard coded to 27017
 		console::info("Checking if localhost server is running on default port (27017)");
 		std::string port = "27017"; // Change this to the dynamic port range @todo
@@ -608,7 +562,6 @@ namespace server_list
 			ui_scripting::notify("updateGameList", {});
 			server_index++;
 		}
-//#endif
 
 		// Master server did not respond
 		if (master_server_list.empty()) {
@@ -635,11 +588,9 @@ namespace server_list
 				active_threads++;
 			}
 
-			std::thread([connect_address, server_index]() {
-				fetch_game_server_info(connect_address, server_index);
+			std::thread([connect_address, &server_index]() {
+				fetch_game_server_info(connect_address, &server_index);
 			}).detach();
-
-			server_index++;
 		}
 
 		std::unique_lock<std::mutex> lock(server_list_mutex);
@@ -966,6 +917,9 @@ namespace server_list
 			return;
 		}
 
+		std::string gameversion = game_server_response_json.value("gameversion", "Unknown");
+		bool outdated = gameversion != hmw_tcp_utils::get_version();
+
 		game::netadr_s address{};
 		if (game::NET_StringToAdr(connect_address.c_str(), &address))
 		{
@@ -973,6 +927,7 @@ namespace server_list
 			server.address = address;
 			server.host_name = game_server_response_json["hostname"];
 			server.map_name = game_server_response_json["mapname"];
+			server.outdated = outdated;
 
 			std::string game_type = game_server_response_json["gametype"];
 			server.game_type = game::UI_GetGameTypeDisplayName(game_type.c_str());
@@ -1048,11 +1003,9 @@ namespace server_list
 			}
 
 			// Detach a thread to fetch game server info
-			std::thread([connect_address, server_index]() {
-				fetch_game_server_info(connect_address, server_index);
+			std::thread([connect_address, &server_index]() {
+				fetch_game_server_info(connect_address, &server_index);
 			}).detach();
-
-			server_index++;
 		}
 
 		load_page(0, false);

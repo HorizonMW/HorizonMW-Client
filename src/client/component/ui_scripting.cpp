@@ -474,7 +474,6 @@ namespace ui_scripting
 			};
 			server_list_table["sortservers"] = [](const game&, int sort_type)
 			{
-				//server_list::sort_serverlist(sort_type);
 				  server_list::tcp::sort_current_page(sort_type);
 			};
 			server_list_table["isgettingserverlist"] = server_list::tcp::is_getting_server_list;
