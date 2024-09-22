@@ -234,7 +234,15 @@ namespace server_list
 			switch (column)
 			{
 			case 0:
-				return servers[i].host_name.empty() ? "" : servers[i].host_name.data();
+			{
+				if (servers[i].host_name.empty()) {
+					return "";
+				}
+
+				auto name = servers[i].host_name.data();
+				auto outdated_name = utils::string::va("^1[Outdated] %s", name);
+				return servers[i].outdated ? outdated_name : name;
+			}
 			case 1:
 			{
 				const auto& map_name = servers[i].map_name;
@@ -905,6 +913,9 @@ namespace server_list
 			return;
 		}
 
+		std::string gameversion = game_server_response_json.value("gameversion", "Unknown");
+		bool outdated = true; //gameversion == hmw_tcp_utils::get_version();
+
 		game::netadr_s address{};
 		if (game::NET_StringToAdr(connect_address.c_str(), &address))
 		{
@@ -912,6 +923,7 @@ namespace server_list
 			server.address = address;
 			server.host_name = game_server_response_json["hostname"];
 			server.map_name = game_server_response_json["mapname"];
+			server.outdated = outdated;
 
 			std::string game_type = game_server_response_json["gametype"];
 			server.game_type = game::UI_GetGameTypeDisplayName(game_type.c_str());

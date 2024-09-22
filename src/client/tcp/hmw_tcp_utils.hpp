@@ -8,6 +8,8 @@
 
 namespace hmw_tcp_utils {
 
+	std::string get_version();
+
 	// MG functions
 
 	namespace MasterServer {

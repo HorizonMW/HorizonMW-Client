@@ -31,6 +31,7 @@ namespace server_list
 		game::netadr_s address;
 		bool is_private;
 		std::string connect_address;
+		bool outdated;
 	};
 
 	int get_player_count();

@@ -25,6 +25,12 @@
 
 namespace hmw_tcp_utils {
 
+	std::string get_version()
+	{
+		// TODO make this use built in VERSION
+		return "v1.0.3";
+	}
+
 	namespace MasterServer {
 
 		std::string master_server_url = "https://ms.s2mod.to/game-servers";
@@ -302,13 +308,14 @@ namespace hmw_tcp_utils {
 }
 
 #pragma region Misc funcs
-	std::string getInfo_Json()
+std::string getInfo_Json()
 	{
 		nlohmann::json data;
 		const auto mapname = party::get_dvar_string("mapname");
 
 		//data["challenge"] = ""; // This is the server challenge, its unused now.
 		data["gamename"] = "H2M";
+		data["gameversion"] = get_version();
 		data["hostname"] = party::get_dvar_string("sv_hostname");
 		data["gametype"] = party::get_dvar_string("g_gametype");
 		data["sv_motd"] = party::get_dvar_string("sv_motd");
