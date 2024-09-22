@@ -214,11 +214,6 @@ namespace server_list
 			}
 		}
 
-		void trigger_refresh()
-		{
-			ui_scripting::notify("updateGameList", {});
-		}
-
 		int ui_feeder_count()
 		{
 			std::lock_guard<std::mutex> _(mutex);
@@ -323,55 +318,6 @@ namespace server_list
 			}
 
 			lui_open_menu_hook.invoke<void>(controllerIndex, menuName, isPopup, isModal, isExclusive);
-		}
-	}
-
-	void sort_serverlist(int sort_type)
-	{
-		list_sort_type = sort_type;
-		
-		std::vector<server_info> to_sort;
-
-		for (auto& page : server_list::tcp::pages) 
-		{
-			for (server_info& server : page.listed_servers)
-			{
-				to_sort.push_back(server);
-			}
-		}
-
-		std::stable_sort(to_sort.begin(), to_sort.end(), [sort_type](const server_info& a, const server_info& b)
-		{
-			switch (sort_type)
-			{
-			case sort_type_unknown:
-				// Patoke @todo: what is this doing and why does it exist?
-				break;
-			case sort_type_hostname:
-				return a.host_name.compare(b.host_name) < 0;
-			case sort_type_map:
-				return a.map_name.compare(b.map_name) < 0;
-			case sort_type_mode:
-				return a.game_type.compare(b.game_type) < 0;
-			case sort_type_players: // sort by most players
-				return (a.clients - a.bots) > (b.clients - b.bots);
-			case sort_type_ping: // sort by smallest ping
-				return a.ping < b.ping; 
-			}
-
-			return true;
-		});
-
-		// This needs reworking
-		// Clear pages
-		tcp::pages.clear();
-
-		int server_index = 0;
-		for (server_info& server : to_sort) 
-		{
-			int page_number = tcp::get_page_number(server_index) - 1;
-			tcp::add_server_to_page(page_number, server);
-			server_index++;
 		}
 	}
 
@@ -571,13 +517,6 @@ namespace server_list
 		);
 
 		refresh_server_list();
-	}
-
-	void sort_servers(int sort_type)
-	{
-		std::lock_guard<std::mutex> _(mutex);
-		sort_serverlist(list_sort_type);
-		trigger_refresh();
 	}
 
 	void tcp::populate_server_list()

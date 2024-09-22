@@ -33,13 +33,10 @@ namespace server_list
 		std::string connect_address;
 	};
 
-	void sort_serverlist(int sort_type);
-
 	int get_player_count();
 	int get_server_count();
 	void add_favourite(int server_index);
 	void delete_favourite(int server_index);
-	void sort_servers(int sort_type);
 
 	namespace tcp {
 		// TCP functions
