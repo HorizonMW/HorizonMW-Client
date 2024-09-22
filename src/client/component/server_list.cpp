@@ -559,12 +559,6 @@ namespace server_list
 			server_index++;
 		}
 
-		// CB testing Laptop
-		std::string test = hmw_tcp_utils::GET_url("192.168.0.72:27017/getInfo", true);
-		add_server_to_list(test, "192.168.0.72:27017", server_index);
-		ui_scripting::notify("updateGameList", {});
-		server_index++;
-
 		// Master server did not respond
 		if (master_server_list.empty()) {
 			console::info("Failed to get response from master server!");
