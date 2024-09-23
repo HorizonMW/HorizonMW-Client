@@ -396,7 +396,8 @@ namespace server_list
 	void tcp::fetch_game_server_info(const std::string& connect_address, std::atomic<int>& server_index) {
 		{
 			std::lock_guard<std::mutex> lock(interrupt_mutex);
-			if (interrupt_server_list || interrupt_favourites) {
+			if (interrupt_server_list || interrupt_favourites) 
+			{
 				return;
 			}
 		}
@@ -404,10 +405,11 @@ namespace server_list
 		std::string game_server_info = connect_address + "/getInfo";
 		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
 
-		if (!game_server_response.empty()) {
+		if (!game_server_response.empty()) 
+		{
 			{
 				std::lock_guard<std::mutex> lock(server_list_mutex);
-				tcp::add_server_to_list(game_server_response, connect_address, server_index.fetch_add(1)); // Atomic increment.
+				tcp::add_server_to_list(game_server_response, connect_address, server_index.fetch_add(1));
 				ui_scripting::notify("updateGameList", {});
 			}
 			
