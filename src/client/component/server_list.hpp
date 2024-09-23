@@ -85,7 +85,7 @@ namespace server_list
 		bool is_getting_favourites();
 		bool is_loading_a_page();
 
-		void fetch_game_server_info(const std::string& connect_address, int* server_index);
+		void fetch_game_server_info(const std::string& connect_address, std::atomic<int>& server_index);
 
 	}
 }
