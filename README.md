@@ -15,7 +15,8 @@ NOTE: You must legally own Call of Duty®: Modern Warfare Remastered to run this
 ## Compile from source
 
 - Clone the Git repo. Do NOT download it as ZIP, that won't work.
-- Update the submodules and run `premake5 vs2022` or simply use the delivered `generate.bat`.
+- cd into the project directory and update the submodules with `git submodule init` and then `git submodule update`
+- run `premake5 vs2022` or simply use the delivered `generate.bat`.
 - Build via solution file in `build\h1-mod.sln`.
 
 ### Premake arguments
