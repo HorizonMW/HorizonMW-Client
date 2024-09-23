@@ -927,6 +927,7 @@ namespace server_list
 			server.address = address;
 			server.host_name = game_server_response_json["hostname"];
 			server.map_name = game_server_response_json["mapname"];
+			server.game_version = gameversion;
 			server.outdated = outdated;
 
 			std::string game_type = game_server_response_json["gametype"];
