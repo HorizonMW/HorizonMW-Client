@@ -42,8 +42,6 @@ namespace server_list
 
 		// Threading
 		std::mutex server_list_mutex;
-		std::condition_variable server_list_cv;
-		std::atomic<int> active_threads = 0;
 
 		// Used for when we're refreshing the server / favourites list
 		bool getting_server_list = false;
@@ -402,6 +400,8 @@ namespace server_list
 			}
 		}
 
+		// @CB: This try catches isn't really needed. But since this is multithreaded, it's better to be safe then sorry
+
 		try {
 			std::string game_server_info = connect_address + "/getInfo";
 			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 10000L); // 10 second timeout
@@ -413,20 +413,9 @@ namespace server_list
 					ui_scripting::notify("updateGameList", {});
 				}
 			}
-
-			{
-				std::lock_guard<std::mutex> lock(server_list_mutex);
-				active_threads.fetch_sub(1);
-			}
-			server_list_cv.notify_one();
 		}
 		catch (const std::exception& e) {
 			console::error("Failed to fetch server info: %s", std::string(e.what()));
-			{
-				std::lock_guard<std::mutex> lock(server_list_mutex);
-				active_threads.fetch_sub(1);
-			}
-			server_list_cv.notify_one();
 		}
 	}
 
@@ -546,6 +535,8 @@ namespace server_list
 	void tcp::populate_server_list() {
 		std::string master_server_list;
 
+		// @CB: These try catches aren't really needed. But since this is multithreaded, it's better to be safe then sorry
+
 		try {
 			master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L);
 		}
@@ -606,7 +597,6 @@ namespace server_list
 					if (interrupt_server_list) {
 						break; // If interrupted, break out of the loop
 					}
-					active_threads.fetch_add(1);
 				}
 
 				// Launch threads for fetching server info
@@ -637,11 +627,6 @@ namespace server_list
 			if (t.joinable()) {
 				t.join();
 			}
-		}
-
-		{
-			std::lock_guard<std::mutex> lock(server_list_mutex);
-			server_list_cv.notify_all();  // Notify that all threads are done
 		}
 
 		load_page(0, false);
@@ -1034,6 +1019,8 @@ namespace server_list
 			return;
 		}
 
+		// @CB: These try catches aren't really needed. But since this is multithreaded, it's better to be safe then sorry
+
 		auto server_index = std::make_shared<std::atomic<int>>(0);  // Use shared_ptr for thread-safe atomic
 		std::vector<std::thread> threads;
 
@@ -1049,11 +1036,9 @@ namespace server_list
 				if (interrupt_favourites) {
 					break;
 				}
-
-				active_threads.fetch_add(1);
 			}
 
-			// Use std::async to handle threads instead of detached threads
+			// Launch threads for fetching server info
 			threads.emplace_back([connect_address, server_index]() {
 				try {
 					fetch_game_server_info(connect_address, server_index);
@@ -1069,12 +1054,6 @@ namespace server_list
 			if (t.joinable()) {
 				t.join();
 			}
-		}
-
-		// Notify that all threads are done
-		{
-			std::lock_guard<std::mutex> lock(server_list_mutex);
-			server_list_cv.notify_all();
 		}
 		
 		load_page(0, false);
