@@ -444,10 +444,6 @@ namespace server_list
 	void add_favourite(int index)
 	{
 		nlohmann::json obj;
-		if (!get_favourites_file(obj))
-		{
-			return;
-		}
 
 		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size())
 		{
