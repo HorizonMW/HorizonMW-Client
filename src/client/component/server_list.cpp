@@ -535,6 +535,9 @@ namespace server_list
 	void tcp::populate_server_list() {
 		// @CB: These try catches aren't really needed. But since this is multithreaded, it's better to be safe then sorry
 
+		notification_message = "Refreshing server list...";
+		ui_scripting::notify("showRefreshingNotification", {});
+
 		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L, true, 3);
 
 		// Clear error message if any
@@ -542,9 +545,6 @@ namespace server_list
 			ui_scripting::notify("hideErrorMessage", {});
 			error_is_displayed = false;
 		}
-
-		notification_message = "Refreshing server list...";
-		ui_scripting::notify("showRefreshingNotification", {});
 
 		auto server_index = std::make_shared<std::atomic<int>>(0);
 

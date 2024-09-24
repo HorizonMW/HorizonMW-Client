@@ -415,9 +415,7 @@ std::string getInfo_Json()
 			else if (res == CURLE_OPERATION_TIMEDOUT && doRetry) {
 				retryCount++;
 				timeout *= 2;
-#ifndef _DEBUG
-				console::info("A GET request did not respond in time. Retrying #%d with timeout %ld ms...", (retryCount + 1), timeout);
-#endif
+				console::debug("A GET request did not respond in time. Retrying #%d with timeout %ld ms...", (retryCount + 1), timeout);
 			}
 			else {
 				std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
