@@ -387,14 +387,14 @@ namespace command
 				is_numeric = false;
 			}
 
-			if (is_numeric && port >= 0 && port <= 65535)
+			if (is_numeric && port >= std::numeric_limits<uint16_t>::min() && port <= std::numeric_limits<uint16_t>::max())
 			{
 				console::info("Successfully set custom port: %i", port);
 				return true;
 			}
 			else
 			{
-				console::error("Invalid port value. Must be a number between 0 and 65535.");
+				console::error("Invalid port value. Must be a number between %u and %u.", std::numeric_limits<uint16_t>::min(), std::numeric_limits<uint16_t>::max());
 				return false;
 			}
 		}
