@@ -363,68 +363,73 @@ std::string getInfo_Json()
 		return jsonString;
 	}
 
-	std::string GET_url(const char* url, bool addPing, long timeout) {
+	std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, int retryMax) {
 		CURL* curl;
 		CURLcode res;
 
-		curl = curl_easy_init();
 		std::string response = "";
-		if (curl) {
-			std::string readBuffer;
+		int retryCount = 0;
 
+		while (retryCount < retryMax) {
+			curl = curl_easy_init();
+			if (!curl) {
+				std::cerr << "Failed to initialize CURL" << std::endl;
+				return "";
+			}
+
+			std::string readBuffer;
 			curl_easy_setopt(curl, CURLOPT_URL, url);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GET_url_WriteCallback);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-			// Set timeout for the request to 1.5 seconds (1500 milliseconds)
 			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
 
 			res = curl_easy_perform(curl);
 
-			if (res != CURLE_OK) {
-				if (strstr(url, "/getInfo")) {
-					// Game server failed to respond
-					console::info("Failed to get a response from a game server: %s", curl_easy_strerror(res));
-				}
-				else if (url == hmw_tcp_utils::MasterServer::get_master_server()) {
-					console::info("Master server failed to respond: %s", curl_easy_strerror(res));
-				} else if (strstr(url, "localhost")) {
-					console::info("No localhost server running...");
-				}
-				else {
-					// Something weird happened
-					std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
-				}
-			} else {
+			if (res == CURLE_OK) {
 				response = readBuffer;
 
 				if (addPing) {
 					double totalTime = 0.0;
 					double connectTime = 0.0;
 
-					// Get the total time in seconds and convert to milliseconds
 					curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &totalTime);
 					int responseTime = static_cast<int>(totalTime * 1000.0);
 
-					// Get the time taken for TCP connection setup (handshake)
 					curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &connectTime);
-					int overhead = static_cast<int>(connectTime * 1000.0);  // Convert to milliseconds
+					int overhead = static_cast<int>(connectTime * 1000.0);
 
 					int ping = responseTime - overhead;
-
-					if (ping == 0) {
-						ping = 1;
-					}
+					if (ping == 0) ping = 1;
 
 					if (!response.empty() && response.back() == '}') {
 						response.pop_back();
 						response += ", \"ping\": \"" + std::to_string(ping) + "\"}";
 					}
 				}
+
+				curl_easy_cleanup(curl);
+				return response;
+			}
+			else if (res == CURLE_OPERATION_TIMEDOUT && doRetry) {
+				retryCount++;
+				timeout *= 2;
+#ifndef _DEBUG
+				console::info("A GET request did not respond in time. Retrying #%d with timeout %ld ms...", (retryCount + 1), timeout);
+#endif
+			}
+			else {
+				std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
+
+				if (!doRetry || retryCount >= retryMax) {
+					curl_easy_cleanup(curl);
+					break;
+				}
 			}
 
 			curl_easy_cleanup(curl);
 		}
+
 		return response;
 	}
 

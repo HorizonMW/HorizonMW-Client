@@ -404,7 +404,7 @@ namespace server_list
 
 		try {
 			std::string game_server_info = connect_address + "/getInfo";
-			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 10000L); // 10 second timeout
+			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 1500L, true, 3);
 
 			if (!game_server_response.empty()) {
 				{
@@ -533,18 +533,9 @@ namespace server_list
 	}
 
 	void tcp::populate_server_list() {
-		std::string master_server_list;
-
 		// @CB: These try catches aren't really needed. But since this is multithreaded, it's better to be safe then sorry
 
-		try {
-			master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L);
-		}
-		catch (const std::exception& e) {
-			console::error("Failed to retrieve master server list: %s", std::string(e.what()));
-			display_error("MASTER SERVER ERROR!", "Failed to connect!");
-			return; // Ensure locks are released before returning
-		}
+		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L, true, 3);
 
 		// Clear error message if any
 		if (error_is_displayed) {
@@ -562,15 +553,10 @@ namespace server_list
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
 
 		if (localhost) {
-			try {
-				std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", true);
-				if (!local_res.empty()) {
-					add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
-					ui_scripting::notify("updateGameList", {});
-				}
-			}
-			catch (const std::exception& e) {
-				console::error("Failed to retrieve localhost server info: %s", std::string(e.what()));
+			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", true);
+			if (!local_res.empty()) {
+				add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
+				ui_scripting::notify("updateGameList", {});
 			}
 		}
 
@@ -605,7 +591,7 @@ namespace server_list
 						fetch_game_server_info(connect_address, server_index);
 					}
 					catch (std::exception e) {
-						console::error("Error fetching favourite server info: %s", std::string(e.what()));
+						console::error("Error fetching server info: %s", std::string(e.what()));
 					}
 				});
 			}
