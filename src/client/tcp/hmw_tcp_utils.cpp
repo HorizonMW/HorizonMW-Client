@@ -119,6 +119,7 @@ namespace hmw_tcp_utils {
 
 		void start_mg_server(std::string url)
 		{
+			console::info("Starting server on: %s", url);
 			const char* c_url = url.c_str();
 			struct mg_mgr mgr;
 			mg_mgr_init(&mgr);

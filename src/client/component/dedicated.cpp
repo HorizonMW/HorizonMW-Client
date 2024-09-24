@@ -30,11 +30,24 @@ namespace dedicated
 			return -1;
 		}
 
+		std::string get_dvar_netip()
+		{
+			const std::string& dvar = "net_ip";
+			auto* dvar_value = game::Dvar_FindVar(dvar.data());
+			if (dvar_value && dvar_value->current.string)
+			{
+				return dvar_value->current.string;
+			}
+
+			return "0.0.0.0";
+		}
+
+
 		utils::hook::detour gscr_set_dynamic_dvar_hook;
 		utils::hook::detour com_quit_f_hook;
 
 		const game::dvar_t* sv_lanOnly;
-
+		const game::dvar_t* net_ip;
 
 		inline bool sv_is_lanOnly()
 		{
@@ -217,6 +230,14 @@ namespace dedicated
 			// Add lanonly mode
 			sv_lanOnly = dvars::register_bool("sv_lanOnly", false, game::DVAR_FLAG_NONE, "Don't send heartbeat");
 
+			scheduler::once([]()
+			{
+				net_ip = dvars::register_string("net_ip", "0.0.0.0", game::DVAR_FLAG_NONE, "Network ip");
+				std::cout << "Set default ip: 0.0.0.0" << std::endl;
+				command::read_startup_variable("net_ip");
+			}, scheduler::pipeline::main);
+
+
 			// Disable VirtualLobby
 			dvars::override::register_bool("virtualLobbyEnabled", false, game::DVAR_FLAG_READ);
 
@@ -366,7 +387,8 @@ namespace dedicated
 
 				if (dedicated) {
 					std::string port = utils::string::va("%i", get_dvar_int("net_port"));
-					const std::string url = "http://0.0.0.0:" + port;
+					std::string net_ip_tcp = get_dvar_netip();
+					const std::string url = "http://" + net_ip_tcp + ":" + port;
 					hmw_tcp_utils::GameServer::start_server(url.c_str());
 				}
 
