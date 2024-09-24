@@ -367,6 +367,57 @@ namespace command
 #endif
 	}
 
+	bool cmd_validation(const std::string& dvar, const std::string& value)
+	{
+		if (dvar == "net_port")
+		{
+			bool is_numeric = true;
+			int port = 0;
+
+			try
+			{
+				port = std::stoi(value);
+			}
+			catch (const std::invalid_argument&)
+			{
+				is_numeric = false;
+			}
+			catch (const std::out_of_range&)
+			{
+				is_numeric = false;
+			}
+
+			if (is_numeric && port >= 0 && port <= 65535)
+			{
+				console::info("Successfully set custom port: %i", port);
+				return true;
+			}
+			else
+			{
+				console::error("Invalid port value. Must be a number between 0 and 65535.");
+				return false;
+			}
+		}
+		else if (dvar == "net_ip")
+		{
+			std::string ip_str = value;
+			sockaddr_in sa;
+
+			if (inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1)
+			{
+				console::info("Successfully set custom IPv4 address for net_ip dvar: %s", ip_str.c_str());
+				return true;
+			}
+			else
+			{
+				console::error("Invalid IPv4 address format for net_ip dvar.");
+				return false;
+			}
+		}
+
+		return false;
+	}
+
 	void read_startup_variable(const std::string& dvar)
 	{
 		// parse the commandline if it's not parsed
@@ -380,48 +431,11 @@ namespace command
 			game::Cmd_TokenizeString(com_console_lines[i]);
 			if (game::Cmd_Argc() >= 3 && game::Cmd_Argv(0) == "set"s && game::Cmd_Argv(1) == dvar)
 			{
-				if (dvar == "net_port")
+				std::string value = game::Cmd_Argv(2);
+				if (cmd_validation(dvar, value))
 				{
-					std::string port_str = game::Cmd_Argv(2);
-					bool is_numeric = true;
-					int port = 0;
-
-					try
-					{
-						port = std::stoi(port_str);
-					}
-					catch (const std::invalid_argument&)
-					{
-						is_numeric = false;
-					}
-					catch (const std::out_of_range&)
-					{
-						is_numeric = false;
-					}
-					if (is_numeric && port >= 0 && port <= 65535)
-					{
-						console::info("Successfully set custom port: %i", port);
-					}
-					else
-					{
-						console::error("Invalid port value. Must be a number between 0 and 65535.");
-					}
+					game::Dvar_SetCommand(game::generateHashValue(game::Cmd_Argv(1)), "", game::Cmd_Argv(2));
 				}
-				else if (dvar == "net_ip")
-				{
-					std::string ip_str = game::Cmd_Argv(2);
-					sockaddr_in sa;
-
-					if (inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1)
-					{
-						console::info("Successfully set custom IP: %s", ip_str.c_str());
-					}
-					else
-					{
-						console::error("Invalid IP address format.");
-					}
-				}
-				game::Dvar_SetCommand(game::generateHashValue(game::Cmd_Argv(1)), "", game::Cmd_Argv(2));
 			}
 
 			game::Cmd_EndTokenizeString();
