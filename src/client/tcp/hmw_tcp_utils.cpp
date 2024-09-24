@@ -36,6 +36,18 @@ namespace hmw_tcp_utils {
 
 		std::string master_server_url = "https://ms.s2mod.to/game-servers";
 
+		bool get_dvar_netip_for_heartbeat(std::string& addr)
+		{
+			const std::string& dvar = "net_ip";
+			auto* dvar_value = game::Dvar_FindVar(dvar.data());
+			if (dvar_value && dvar_value->current.string && dvar_value->current.string != "0.0.0.0")
+			{
+				addr = std::string(dvar_value->current.string);
+				return true;
+			}
+			return false;
+		}
+
 		void send_heartbeat()
 		{
 			std::string info_json = getInfo_Json();
@@ -49,6 +61,12 @@ namespace hmw_tcp_utils {
 				curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 				curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+
+				std::string interface_ip;
+				if (get_dvar_netip_for_heartbeat(interface_ip))
+				{
+					curl_easy_setopt(curl, CURLOPT_INTERFACE, interface_ip);
+				}
 
 				struct curl_slist* headers = nullptr;
 				headers = curl_slist_append(headers, "Content-Type: application/json");
