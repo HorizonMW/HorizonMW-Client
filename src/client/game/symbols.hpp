@@ -33,6 +33,12 @@ namespace game
 	WEAK symbol<int(Weapon weapIdx, bool isAlternate, bool isDualWielding)> BG_SprintOutTime{ 0x2EB640 };
 	WEAK symbol<void(playerState_s* ps, PlayerHandIndex hand)> PM_SetReloadingState{ 0x2D66D0 };
 
+	WEAK symbol<int64_t(__int64 weapon, bool isAlternate)> BG_GetMeleeDamage{ 0x2E6A90 };
+	WEAK symbol<__int64(playerState_s* ps)> BG_GetViewmodelWeapon{ 0x2E1270 };
+	WEAK symbol<void(pmove_t* pm, pml_t* pml)> PM_MeleeChargeStart{ 0x2CE560 };
+	WEAK symbol<void(pmove_t* pm, int msec, playerState_s* ps, unsigned int* holdrand)> PM_Weapon_MeleeInit{ 0x2DBA10 };
+	WEAK symbol<bool(playerState_s* ps)> BG_AllowMeleeFromADS{ 0x2E39F0 };
+
 	WEAK symbol<GfxScene> scene{ 0x33E4290 };
 	WEAK symbol<void(int a1)> CL_VirtualLobbyShutdown{ 0x13C9C0 };
 	WEAK symbol<void()> Com_ReloadVirtualLobbyFastFiles{ 0x17CF60 };

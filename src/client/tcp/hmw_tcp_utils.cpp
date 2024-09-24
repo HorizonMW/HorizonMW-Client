@@ -22,8 +22,15 @@
 #include <utils/http.hpp>
 
 #include <curl/curl.h>
+#include "version.hpp"
 
 namespace hmw_tcp_utils {
+
+	std::string get_version()
+	{
+		std::string version(VERSION);
+		return version;
+	}
 
 	namespace MasterServer {
 
@@ -303,13 +310,14 @@ namespace hmw_tcp_utils {
 }
 
 #pragma region Misc funcs
-	std::string getInfo_Json()
+std::string getInfo_Json()
 	{
 		nlohmann::json data;
 		const auto mapname = party::get_dvar_string("mapname");
 
 		//data["challenge"] = ""; // This is the server challenge, its unused now.
 		data["gamename"] = "H2M";
+		data["gameversion"] = get_version();
 		data["hostname"] = party::get_dvar_string("sv_hostname");
 		data["gametype"] = party::get_dvar_string("g_gametype");
 		data["sv_motd"] = party::get_dvar_string("sv_motd");
@@ -356,7 +364,7 @@ namespace hmw_tcp_utils {
 		return jsonString;
 	}
 
-	std::string GET_url(const char* url, bool addPing) {
+	std::string GET_url(const char* url, bool addPing, long timeout) {
 		CURL* curl;
 		CURLcode res;
 
@@ -370,12 +378,24 @@ namespace hmw_tcp_utils {
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
 			// Set timeout for the request to 1.5 seconds (1500 milliseconds)
-			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1500L);
+			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
 
 			res = curl_easy_perform(curl);
 
 			if (res != CURLE_OK) {
-				std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
+				if (strstr(url, "/getInfo")) {
+					// Game server failed to respond
+					console::info("Failed to get a response from a game server: %s", curl_easy_strerror(res));
+				}
+				else if (url == hmw_tcp_utils::MasterServer::get_master_server()) {
+					console::info("Master server failed to respond: %s", curl_easy_strerror(res));
+				} else if (strstr(url, "localhost")) {
+					console::info("No localhost server running...");
+				}
+				else {
+					// Something weird happened
+					std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
+				}
 			} else {
 				response = readBuffer;
 
