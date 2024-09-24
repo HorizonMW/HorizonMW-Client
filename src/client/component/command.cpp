@@ -378,10 +378,49 @@ namespace command
 		for (int i = 0; i < com_num_console_lines; i++)
 		{
 			game::Cmd_TokenizeString(com_console_lines[i]);
-
-			// only +set dvar value
 			if (game::Cmd_Argc() >= 3 && game::Cmd_Argv(0) == "set"s && game::Cmd_Argv(1) == dvar)
 			{
+				if (dvar == "net_port")
+				{
+					std::string port_str = game::Cmd_Argv(2);
+					bool is_numeric = true;
+					int port = 0;
+
+					try
+					{
+						port = std::stoi(port_str);
+					}
+					catch (const std::invalid_argument&)
+					{
+						is_numeric = false;
+					}
+					catch (const std::out_of_range&)
+					{
+						is_numeric = false;
+					}
+					if (is_numeric && port >= 0 && port <= 65535)
+					{
+						console::info("Successfully set custom port: %i", port);
+					}
+					else
+					{
+						console::error("Invalid port value. Must be a number between 0 and 65535.");
+					}
+				}
+				else if (dvar == "net_ip")
+				{
+					std::string ip_str = game::Cmd_Argv(2);
+					sockaddr_in sa;
+
+					if (inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1)
+					{
+						console::info("Successfully set custom IP: %s", ip_str.c_str());
+					}
+					else
+					{
+						console::error("Invalid IP address format.");
+					}
+				}
 				game::Dvar_SetCommand(game::generateHashValue(game::Cmd_Argv(1)), "", game::Cmd_Argv(2));
 			}
 
