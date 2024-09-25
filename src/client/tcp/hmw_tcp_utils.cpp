@@ -40,11 +40,16 @@ namespace hmw_tcp_utils {
 		{
 			const std::string& dvar = "net_ip";
 			auto* dvar_value = game::Dvar_FindVar(dvar.data());
-			if (dvar_value && dvar_value->current.string && dvar_value->current.string != "0.0.0.0")
-			{
-				addr = std::string(dvar_value->current.string);
-				return true;
+			if (dvar_value && dvar_value->current.string) {
+				std::string ip_str = dvar_value->current.string;
+				struct sockaddr_in sa;
+				if (ip_str != "0.0.0.0" && inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1)
+				{
+					addr = std::string(dvar_value->current.string);
+					return true;
+				}
 			}
+
 			return false;
 		}
 
