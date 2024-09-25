@@ -395,9 +395,10 @@ namespace dedicated
 
 				if (dedicated) {
 					std::string port = utils::string::va("%i", get_dvar_int("net_port"));
-					std::string net_ip_tcp = get_dvar_netip();
 
-					const std::string url = "http://"+ net_ip_tcp +":" + port;
+					std::string net_ip = get_dvar_netip();
+					const std::string url = "http://"+ net_ip +":" + port;
+
 					hmw_tcp_utils::GameServer::start_server(url);
 				}
 
