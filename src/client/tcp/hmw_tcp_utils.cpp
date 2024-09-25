@@ -137,8 +137,8 @@ namespace hmw_tcp_utils {
 
 		void start_mg_server(std::string url)
 		{
-			console::info("Starting server on: %s", url);
 			const char* c_url = url.c_str();
+			console::info("Starting server on: %s", c_url);
 			struct mg_mgr mgr;
 			mg_mgr_init(&mgr);
 			// @Aphrodite, Conn is unused but defined incase it needs to be used in the future.

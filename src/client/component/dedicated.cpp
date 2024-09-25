@@ -36,7 +36,15 @@ namespace dedicated
 			auto* dvar_value = game::Dvar_FindVar(dvar.data());
 			if (dvar_value && dvar_value->current.string)
 			{
-				return dvar_value->current.string;
+				std::string ip_str = dvar_value->current.string;
+				struct sockaddr_in sa;
+				if (inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1) {
+					console::info("Resolved net_ip address: %s", ip_str.c_str());
+					return ip_str;
+				}
+				else {
+					console::error("Invalid IP using default 0.0.0.0 instead of %s", ip_str.c_str());
+				}
 			}
 
 			return "0.0.0.0";
@@ -388,8 +396,9 @@ namespace dedicated
 				if (dedicated) {
 					std::string port = utils::string::va("%i", get_dvar_int("net_port"));
 					std::string net_ip_tcp = get_dvar_netip();
-					const std::string url = "http://" + net_ip_tcp + ":" + port;
-					hmw_tcp_utils::GameServer::start_server(url.c_str());
+
+					const std::string url = "http://"+ net_ip_tcp +":" + port;
+					hmw_tcp_utils::GameServer::start_server(url);
 				}
 
 				// Send heartbeat to master
