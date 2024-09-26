@@ -470,6 +470,7 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 
 		if (!doRetry) {
 			// We do not want to retry
+			console::info("Retry aborted.");
 			break;
 		}
 
