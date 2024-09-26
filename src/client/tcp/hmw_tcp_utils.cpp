@@ -40,11 +40,16 @@ namespace hmw_tcp_utils {
 		{
 			const std::string& dvar = "net_ip";
 			auto* dvar_value = game::Dvar_FindVar(dvar.data());
-			if (dvar_value && dvar_value->current.string && dvar_value->current.string != "0.0.0.0")
-			{
-				addr = std::string(dvar_value->current.string);
-				return true;
+			if (dvar_value && dvar_value->current.string) {
+				std::string ip_str = dvar_value->current.string;
+				struct sockaddr_in sa;
+				if (ip_str != "0.0.0.0" && inet_pton(AF_INET, ip_str.c_str(), &(sa.sin_addr)) == 1)
+				{
+					addr = std::string(dvar_value->current.string);
+					return true;
+				}
 			}
+
 			return false;
 		}
 
@@ -137,8 +142,8 @@ namespace hmw_tcp_utils {
 
 		void start_mg_server(std::string url)
 		{
-			console::info("Starting server on: %s", url);
 			const char* c_url = url.c_str();
+			console::info("Starting server on: %s", c_url);
 			struct mg_mgr mgr;
 			mg_mgr_init(&mgr);
 			// @Aphrodite, Conn is unused but defined incase it needs to be used in the future.
