@@ -164,7 +164,7 @@ namespace hmw_tcp_utils {
 		bool is_localhost(std::string port)
 		{
 			std::string url = "http://127.0.0.1:" + port + "/status";
-			std::string res = GET_url(url.c_str());
+			std::string res = GET_url(url.c_str(), false, 1500L, false);
 			return res != "";
 		}
 	
@@ -387,73 +387,101 @@ std::string getInfo_Json()
 		return jsonString;
 	}
 
-	std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, int retryMax) {
-		CURL* curl;
-		CURLcode res;
+std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, int retryMax) {
+	CURL* curl;
+	CURLcode res;
 
-		std::string response = "";
-		int retryCount = 0;
+	std::string response = "";
+	int retryCount = 0;
 
-		while (retryCount < retryMax) {
-			curl = curl_easy_init();
-			if (!curl) {
-				std::cerr << "Failed to initialize CURL" << std::endl;
-				return "";
-			}
+	while (retryCount <= retryMax) {
+		curl = curl_easy_init();
+		if (!curl) {
+			std::cerr << "Failed to initialize CURL" << std::endl;
+			return "";
+		}
 
-			std::string readBuffer;
-			curl_easy_setopt(curl, CURLOPT_URL, url);
-			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GET_url_WriteCallback);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+		std::string readBuffer;
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GET_url_WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
 
-			curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
+		res = curl_easy_perform(curl);
 
-			res = curl_easy_perform(curl);
+		if (res == CURLE_OK) {
+			response = readBuffer;
 
-			if (res == CURLE_OK) {
-				response = readBuffer;
+			if (addPing) {
+				double totalTime = 0.0;
+				double connectTime = 0.0;
 
-				if (addPing) {
-					double totalTime = 0.0;
-					double connectTime = 0.0;
+				curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &totalTime);
+				int responseTime = static_cast<int>(totalTime * 1000.0);
 
-					curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &totalTime);
-					int responseTime = static_cast<int>(totalTime * 1000.0);
+				curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &connectTime);
+				int overhead = static_cast<int>(connectTime * 1000.0);
 
-					curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &connectTime);
-					int overhead = static_cast<int>(connectTime * 1000.0);
+				int ping = responseTime - overhead;
+				if (ping == 0) ping = 1;
 
-					int ping = responseTime - overhead;
-					if (ping == 0) ping = 1;
-
-					if (!response.empty() && response.back() == '}') {
-						response.pop_back();
-						response += ", \"ping\": \"" + std::to_string(ping) + "\"}";
-					}
-				}
-
-				curl_easy_cleanup(curl);
-				return response;
-			}
-			else if (res != CURLE_OK && doRetry) {
-				retryCount++;
-				timeout *= 2;
-				console::debug("A GET request did not respond in time. Retrying #%d with timeout %ld ms...", (retryCount + 1), timeout);
-			}
-			else {
-				std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
-
-				if (!doRetry || retryCount >= retryMax) {
-					curl_easy_cleanup(curl);
-					break;
+				if (!response.empty() && response.back() == '}') {
+					response.pop_back();
+					response += ", \"ping\": \"" + std::to_string(ping) + "\"}";
 				}
 			}
 
 			curl_easy_cleanup(curl);
+			return response;  // Success, return the response
+		}
+		else if (res == CURLE_COULDNT_RESOLVE_HOST) {
+			console::info("Failed to resolve host. Aborting...");
+			curl_easy_cleanup(curl);
+			break;  // Stop retrying if host can't be resolved
+		}
+		else if (res == CURLE_COULDNT_CONNECT) {
+			console::info("Could not connect to host. Retrying...");
+		}
+		else if (res == CURLE_OPERATION_TIMEDOUT) {
+			console::info("Request timed out. Retrying...");
+		}
+		else if (res == CURLE_HTTP_RETURNED_ERROR) {
+			long response_code = 0;
+			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+			console::info("HTTP error: %ld", response_code);  // Using %ld for long
+			if (response_code >= 500) {
+				console::info("Retrying due to server error (5xx)...");
+			}
+			else {
+				console::info("Non-retryable error (4xx). Aborting...");
+				curl_easy_cleanup(curl);
+				break;  // Abort on client-side errors
+			}
+		}
+		else if (res == CURLE_SEND_ERROR || res == CURLE_RECV_ERROR) {
+			console::info("Network send/receive error. Retrying...");
+		}
+		else {
+			std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
+			curl_easy_cleanup(curl);
+			break;  // Abort for non-retryable errors
 		}
 
-		return response;
+		retryCount++;
+		if (retryCount > retryMax) {
+			console::info("Reached max retries (%d). Aborting...", retryMax - 1);
+			break;  // Stop retrying if max retries are reached
+		}
+
+		timeout *= 2;  // Exponential backoff
+		console::info("Retrying request #%d with timeout %ld ms...", retryCount, timeout);
+
+		curl_easy_cleanup(curl);  // Clean up before retrying
 	}
+
+	return response;  // Return an empty response if all retries failed
+}
 
 	size_t GET_url_WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 		((std::string*)userp)->append((char*)contents, size * nmemb);

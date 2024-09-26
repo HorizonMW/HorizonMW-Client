@@ -415,7 +415,7 @@ namespace server_list
 			}
 		}
 		catch (const std::exception& e) {
-			console::error("Failed to fetch server info: %s", std::string(e.what()));
+			console::error("Failed to fetch server info: %s", std::string(e.what()).data());
 		}
 	}
 
@@ -549,7 +549,7 @@ namespace server_list
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
 
 		if (localhost) {
-			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", true);
+			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", false);
 			if (!local_res.empty()) {
 				add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
 				ui_scripting::notify("updateGameList", {});
@@ -587,7 +587,7 @@ namespace server_list
 						fetch_game_server_info(connect_address, server_index);
 					}
 					catch (std::exception e) {
-						console::error("Error fetching server info: %s", std::string(e.what()));
+						console::error("Error fetching server info: %s", std::string(e.what()).data());
 					}
 				});
 			}
@@ -802,7 +802,7 @@ namespace server_list
 	bool tcp::check_can_join(std::string& connect_address)
 	{
 		std::string game_server_info = connect_address + "/getInfo";
-		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
+		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 3);
 
 		if (game_server_response.empty())
 		{
