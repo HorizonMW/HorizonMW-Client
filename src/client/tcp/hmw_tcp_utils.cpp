@@ -463,7 +463,7 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 			console::info("Network send/receive error. Retrying...");
 		}
 		else {
-			std::cerr << "GET request fsailed: " << curl_easy_strerror(res) << std::endl;
+			std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
 			curl_easy_cleanup(curl);
 			break;  // Abort for non-retryable errors
 		}
