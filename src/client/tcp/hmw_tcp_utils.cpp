@@ -164,7 +164,7 @@ namespace hmw_tcp_utils {
 		bool is_localhost(std::string port)
 		{
 			std::string url = "http://127.0.0.1:" + port + "/status";
-			std::string res = GET_url(url.c_str(), false, 1500L, false);
+			std::string res = GET_url(url.c_str(), false, 1500L, false, 1);
 			return res != "";
 		}
 	
@@ -463,9 +463,14 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 			console::info("Network send/receive error. Retrying...");
 		}
 		else {
-			std::cerr << "GET request failed: " << curl_easy_strerror(res) << std::endl;
+			std::cerr << "GET request fsailed: " << curl_easy_strerror(res) << std::endl;
 			curl_easy_cleanup(curl);
 			break;  // Abort for non-retryable errors
+		}
+
+		if (!doRetry) {
+			// We do not want to retry
+			break;
 		}
 
 		retryCount++;

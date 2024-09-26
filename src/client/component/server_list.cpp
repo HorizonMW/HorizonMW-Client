@@ -549,7 +549,7 @@ namespace server_list
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
 
 		if (localhost) {
-			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", false);
+			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", false, 1500L, false, 1);
 			if (!local_res.empty()) {
 				add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
 				ui_scripting::notify("updateGameList", {});
