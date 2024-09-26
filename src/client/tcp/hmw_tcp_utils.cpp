@@ -430,7 +430,7 @@ std::string getInfo_Json()
 				curl_easy_cleanup(curl);
 				return response;
 			}
-			else if (res == CURLE_OPERATION_TIMEDOUT && doRetry) {
+			else if (res != CURLE_OK && doRetry) {
 				retryCount++;
 				timeout *= 2;
 				console::debug("A GET request did not respond in time. Retrying #%d with timeout %ld ms...", (retryCount + 1), timeout);
