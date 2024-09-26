@@ -481,7 +481,7 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 		}
 
 		timeout *= 2;  // Exponential backoff
-		console::info("Retrying request #%d with timeout %ld ms...", retryCount, timeout);
+		console::debug("Retrying request #%d with timeout %ld ms...", retryCount, timeout);
 
 		curl_easy_cleanup(curl);  // Clean up before retrying
 	}
