@@ -443,7 +443,15 @@ namespace server_list
 
 	void add_favourite(int index)
 	{
+		// Read existing favorites from the file
 		nlohmann::json obj;
+		std::ifstream favourites_file("players2/favourites.json");
+
+		if (favourites_file.is_open())
+		{
+			favourites_file >> obj;
+			favourites_file.close();
+		}
 
 		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size())
 		{
@@ -459,13 +467,17 @@ namespace server_list
 
 		server_info& info = page.listed_servers[index];
 
+		// Check if the server is already in favorites
 		if (obj.find(info.connect_address) != obj.end())
 		{
 			utils::toast::show("Error", "Server already marked as favourite.");
 			return;
 		}
 
-		obj.emplace_back(info.connect_address);
+		// Add the new favorite server
+		obj.push_back(info.connect_address);
+
+		// Write updated favorites to the file
 		utils::io::write_file("players2/favourites.json", obj.dump());
 		utils::toast::show("Success", "Server added to favourites.");
 
