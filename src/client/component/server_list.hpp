@@ -76,7 +76,7 @@ namespace server_list
 
 		void display_error(std::string header, std::string message);
 
-		bool check_can_join(std::string& connect_address);
+		bool check_can_join(const char* connect_address);
 
 		void sort_current_page(int sort_type, bool bypassListCheck = false);
 
@@ -88,6 +88,8 @@ namespace server_list
 		void fetch_game_server_info(const std::string& connect_address, std::shared_ptr<std::atomic<int>> server_index);
 
 		void set_sort_type(int type);
+
+		void join_server_new(int index);
 
 	}
 }

@@ -39,6 +39,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <tcp/hmw_tcp_utils.hpp>
 
 namespace ui_scripting
 {
@@ -438,6 +439,8 @@ namespace ui_scripting
 				return oss.str();
 			};
 
+			hud_extras["getgameversion"] = hmw_tcp_utils::get_version;
+
 			auto server_list_table = table();
 			lua["serverlist"] = server_list_table;
 
@@ -477,6 +480,12 @@ namespace ui_scripting
 				server_list::tcp::set_sort_type(sort_type);
 				server_list::tcp::sort_current_page(sort_type);
 			};
+
+			server_list_table["joingame"] = [](const game&, int index)
+			{
+				server_list::tcp::join_server_new(index);
+			};
+
 			server_list_table["isgettingserverlist"] = server_list::tcp::is_getting_server_list;
 			server_list_table["isgettingfavourites"] = server_list::tcp::is_getting_favourites;
 			server_list_table["isloadingpage"] = server_list::tcp::is_loading_a_page;

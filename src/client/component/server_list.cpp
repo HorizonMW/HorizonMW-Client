@@ -186,6 +186,10 @@ namespace server_list
 
 		void join_server(int, int, const int index)
 		{
+			tcp::join_server_new(index);
+			return; // Do nothing now
+
+			/*
 			std::lock_guard<std::mutex> _(mutex);
 
 			const auto i = static_cast<size_t>(index);
@@ -212,7 +216,7 @@ namespace server_list
 						server_list::tcp::display_error(server_list::tcp::failed_to_join_header, server_list::tcp::failed_to_join_reason);
 					}
 				}
-			}
+			}*/
 		}
 
 		int ui_feeder_count()
@@ -241,8 +245,7 @@ namespace server_list
 				}
 
 				auto name = servers[i].host_name.data();
-				auto outdated_name = utils::string::va("^1[Outdated] %s", name);
-				return servers[i].outdated ? outdated_name : name;
+				return name;
 			}
 			case 1:
 			{
@@ -284,6 +287,18 @@ namespace server_list
 				return servers[i].is_private ? "1" : "0";
 			case 6:
 				return servers[i].mod_name.empty() ? "" : servers[i].mod_name.data();
+			case 8:
+			{
+				auto version = servers[i].game_version.data();
+
+				std::string versionStr(version);
+
+				if (versionStr.starts_with('v')) {
+					versionStr.erase(0, 1);
+				}
+
+				return servers[i].outdated ? utils::string::va("^1%s", versionStr.data()) : utils::string::va("%s", versionStr.data());
+			}
 			default:
 				return "";
 			}
@@ -337,8 +352,6 @@ namespace server_list
 				return;
 			}
 		}
-
-		console::info("Sort list type %d : %d", list_sort_type, sort_type);
 
 		auto servers_cache = servers;
 
@@ -427,6 +440,36 @@ namespace server_list
 	void tcp::set_sort_type(int type)
 	{
 		list_sort_type = type;
+	}
+
+	void tcp::join_server_new(int index)
+	{
+		scheduler::once([=]()
+		{
+			console::info("Joining server: %d", index);
+			std::lock_guard<std::mutex> _(mutex);
+
+			if (index < servers.size())
+			{
+				std::string server_address = "";
+				console::info("Connecting to server:[%d] {%s} %s\n", index, servers[index].connect_address.data(), servers[index].host_name.data());
+				//tcp::interrupt_favourites = true;
+				//tcp::interrupt_server_list = true;
+				//party::connect(servers[index].address);
+
+				//@CB TODO. Fix this with new system. because its now called with lui, connect_address gets corruipted
+				bool canJoin = server_list::tcp::check_can_join(servers[index].connect_address.data());
+				if (canJoin) {
+					//command::execute("connect " + servers[i].connect_address);
+					tcp::interrupt_favourites = true;
+					tcp::interrupt_server_list = true;
+					party::connect(servers[index].address);
+				}
+				else {
+					server_list::tcp::display_error(server_list::tcp::failed_to_join_header, server_list::tcp::failed_to_join_reason);
+				}
+			}
+		}, scheduler::pipeline::main);
 	}
 
 	int get_player_count()
@@ -832,10 +875,22 @@ namespace server_list
 		}, scheduler::pipeline::main, error_display_length);
 	}
 
-	bool tcp::check_can_join(std::string& connect_address)
+	bool tcp::check_can_join(const char* connect_address)
 	{
-		std::string game_server_info = connect_address + "/getInfo";
-		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 3);
+		// Ensure connect_address is valid before using it
+		if (connect_address == nullptr) {
+			console::info("Failed to join server. Invalid connect address.");
+			error_header = "Failed to join server!";
+			error_message = "Invalid connect address.";
+			display_error(error_header, error_message);
+			return false;
+		}
+
+		std::string game_server_info = std::string(connect_address) + "/getInfo";
+
+		const char* server_address = game_server_info.data();
+
+		std::string game_server_response = hmw_tcp_utils::GET_url(server_address, true, 1500L, false, 3);
 
 		if (game_server_response.empty())
 		{
@@ -916,7 +971,7 @@ namespace server_list
 		if (player_count == actual_max_clients) {
 			error_display_length = 10s;
 			failed_to_join_header = "Reserved Game Full!";
-			failed_to_join_reason = "Reserved? Use commandline\n/connect " + connect_address;
+			failed_to_join_reason = "Reserved? Use commandline\n/connect " + std::string(connect_address);
 			return false;
 		}
 
