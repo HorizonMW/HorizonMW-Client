@@ -87,5 +87,7 @@ namespace server_list
 
 		void fetch_game_server_info(const std::string& connect_address, std::shared_ptr<std::atomic<int>> server_index);
 
+		void set_sort_type(int type);
+
 	}
 }
