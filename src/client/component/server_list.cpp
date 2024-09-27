@@ -427,7 +427,6 @@ namespace server_list
 	void tcp::set_sort_type(int type)
 	{
 		list_sort_type = type;
-		console::info("Set sort list type %d : %d", list_sort_type, type);
 	}
 
 	int get_player_count()
