@@ -101,7 +101,7 @@ namespace server_list
 	namespace
 	{
 		enum sort_types : uint32_t {
-			sort_type_unknown = 0, // Patoke @todo: reverse
+			sort_type_unknown = 0, // Patoke @todo: reverse, Captain Barbossa: It will never trigger because it is not used in the server_list.lua
 			sort_type_hostname = 1,
 			sort_type_map = 2,
 			sort_type_mode = 3,
@@ -120,7 +120,7 @@ namespace server_list
 		std::vector<server_info> servers;
 
 		size_t server_list_page = 0;
-		int list_sort_type = sort_type_hostname;
+		int list_sort_type = sort_type_players;
 		std::chrono::high_resolution_clock::time_point last_scroll{};
 
 		bool get_favourites_file(nlohmann::json& out)
@@ -330,10 +330,15 @@ namespace server_list
 		}
 	}
 
-	void tcp::sort_current_page(int sort_type) {
-		if (getting_server_list || getting_favourites || is_loading_page) {
-			return;
+	void tcp::sort_current_page(int sort_type, bool bypassListCheck) {
+		// bypassListCheck is used for auto sorting on refresh / parsing favourites
+		if (!bypassListCheck) {
+			if (getting_server_list || getting_favourites || is_loading_page) {
+				return;
+			}
 		}
+
+		console::info("Sort list type %d : %d", list_sort_type, sort_type);
 
 		auto servers_cache = servers;
 
@@ -415,8 +420,14 @@ namespace server_list
 			}
 		}
 		catch (const std::exception& e) {
-			console::error("Failed to fetch server info: %s", std::string(e.what()));
+			console::error("Failed to fetch server info: %s", std::string(e.what()).data());
 		}
+	}
+
+	void tcp::set_sort_type(int type)
+	{
+		list_sort_type = type;
+		console::info("Set sort list type %d : %d", list_sort_type, type);
 	}
 
 	int get_player_count()
@@ -443,7 +454,15 @@ namespace server_list
 
 	void add_favourite(int index)
 	{
+		// Read existing favorites from the file
 		nlohmann::json obj;
+		std::ifstream favourites_file("players2/favourites.json");
+
+		if (favourites_file.is_open())
+		{
+			favourites_file >> obj;
+			favourites_file.close();
+		}
 
 		if (tcp::current_page < 0 || tcp::current_page >= tcp::pages.size())
 		{
@@ -459,13 +478,17 @@ namespace server_list
 
 		server_info& info = page.listed_servers[index];
 
+		// Check if the server is already in favorites
 		if (obj.find(info.connect_address) != obj.end())
 		{
 			utils::toast::show("Error", "Server already marked as favourite.");
 			return;
 		}
 
-		obj.emplace_back(info.connect_address);
+		// Add the new favorite server
+		obj.push_back(info.connect_address);
+
+		// Write updated favorites to the file
 		utils::io::write_file("players2/favourites.json", obj.dump());
 		utils::toast::show("Success", "Server added to favourites.");
 
@@ -549,7 +572,7 @@ namespace server_list
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
 
 		if (localhost) {
-			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", true);
+			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", false, 1500L, false, 1);
 			if (!local_res.empty()) {
 				add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
 				ui_scripting::notify("updateGameList", {});
@@ -587,7 +610,7 @@ namespace server_list
 						fetch_game_server_info(connect_address, server_index);
 					}
 					catch (std::exception e) {
-						console::error("Error fetching server info: %s", std::string(e.what()));
+						console::error("Error fetching server info: %s", std::string(e.what()).data());
 					}
 				});
 			}
@@ -622,6 +645,12 @@ namespace server_list
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
+
+		// Auto sort after server populate
+		scheduler::once([=]()
+		{
+			sort_current_page(list_sort_type, true); // Sort after populating
+		}, scheduler::pipeline::main);
 	}
 
 	void tcp::populate_server_list_threaded()
@@ -706,10 +735,13 @@ namespace server_list
 					insert_server(std::move(server));
 				}
 
-				sort_current_page(list_sort_type);
 				ui_scripting::notify("updateGameList", {});
 				ui_scripting::notify("hideRefreshingNotification", {});
-				is_loading_page = false;
+				scheduler::once([=]()
+				{
+					is_loading_page = false;
+					sort_current_page(list_sort_type); // Sort after populating
+				}, scheduler::pipeline::main);
 			}, scheduler::pipeline::main, 125ms);
 		}
 
@@ -730,7 +762,8 @@ namespace server_list
 		current_page++;
 		if (current_page >= get_total_pages()) 
 		{
-			return load_page(0); // Load first page
+			load_page(0); // Load first page
+			return;
 		}
 		load_page(current_page);
 	}
@@ -744,7 +777,8 @@ namespace server_list
 		current_page--;
 		if (current_page < 0) 
 		{
-			return load_page(get_total_pages() - 1); // Load to last page
+			load_page(get_total_pages() - 1); // Load to last page
+			return;
 		}
 		load_page(current_page);
 	}
@@ -802,7 +836,7 @@ namespace server_list
 	bool tcp::check_can_join(std::string& connect_address)
 	{
 		std::string game_server_info = connect_address + "/getInfo";
-		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true);
+		std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 3);
 
 		if (game_server_response.empty())
 		{
@@ -1052,8 +1086,11 @@ namespace server_list
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
 
-		// Auto sort on completion not working
-		//sort_current_page(list_sort_type); // Sort after populating
+		// Auto sort after parsing favourites
+		scheduler::once([=]()
+		{
+			sort_current_page(list_sort_type, true); // Sort after populating
+		}, scheduler::pipeline::main);
 	}
 
 	class component final : public component_interface

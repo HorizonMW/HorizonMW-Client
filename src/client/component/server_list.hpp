@@ -78,7 +78,7 @@ namespace server_list
 
 		bool check_can_join(std::string& connect_address);
 
-		void sort_current_page(int sort_type);
+		void sort_current_page(int sort_type, bool bypassListCheck = false);
 
 		// Functions to pass these to lua
 		bool is_getting_server_list();
@@ -86,6 +86,8 @@ namespace server_list
 		bool is_loading_a_page();
 
 		void fetch_game_server_info(const std::string& connect_address, std::shared_ptr<std::atomic<int>> server_index);
+
+		void set_sort_type(int type);
 
 	}
 }
