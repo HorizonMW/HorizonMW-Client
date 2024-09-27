@@ -330,9 +330,12 @@ namespace server_list
 		}
 	}
 
-	void tcp::sort_current_page(int sort_type) {
-		if (getting_server_list || getting_favourites || is_loading_page) {
-			return;
+	void tcp::sort_current_page(int sort_type, bool bypassListCheck) {
+		// bypassListCheck is used for auto sorting on refresh / parsing favourites
+		if (!bypassListCheck) {
+			if (getting_server_list || getting_favourites || is_loading_page) {
+				return;
+			}
 		}
 
 		auto servers_cache = servers;
@@ -634,6 +637,11 @@ namespace server_list
 		ui_scripting::notify("updateGameList", {});
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
+
+		scheduler::once([=]()
+		{
+			sort_current_page(list_sort_type, true); // Sort after populating
+		}, scheduler::pipeline::main);
 	}
 
 	void tcp::populate_server_list_threaded()
@@ -1064,8 +1072,10 @@ namespace server_list
 		ui_scripting::notify("hideRefreshingNotification", {});
 		ui_scripting::notify("updateRefreshTimer", {});
 
-		// Auto sort on completion not working
-		//sort_current_page(list_sort_type); // Sort after populating
+		scheduler::once([=]()
+		{
+			sort_current_page(list_sort_type, true); // Sort after populating
+		}, scheduler::pipeline::main);
 	}
 
 	class component final : public component_interface

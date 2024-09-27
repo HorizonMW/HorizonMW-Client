@@ -78,7 +78,7 @@ namespace server_list
 
 		bool check_can_join(std::string& connect_address);
 
-		void sort_current_page(int sort_type);
+		void sort_current_page(int sort_type, bool bypassListCheck = false);
 
 		// Functions to pass these to lua
 		bool is_getting_server_list();
