@@ -468,11 +468,6 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 			break;  // Abort for non-retryable errors
 		}
 
-		if (!doRetry) {
-			// We do not want to retry
-			console::info("Retry aborted.");
-			break;
-		}
 
 		retryCount++;
 		if (retryCount > retryMax) {
