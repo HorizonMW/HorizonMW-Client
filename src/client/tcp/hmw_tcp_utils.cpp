@@ -468,6 +468,7 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 			break;  // Abort for non-retryable errors
 		}
 
+		// If we do not actually want this GET request to retry, only used by localhost check
 		if (!doRetry) {
 			// We do not want to retry
 			console::info("Retry aborted.");

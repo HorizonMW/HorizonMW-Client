@@ -890,7 +890,7 @@ namespace server_list
 
 		const char* server_address = game_server_info.data();
 
-		std::string game_server_response = hmw_tcp_utils::GET_url(server_address, true, 1500L, false, 3);
+		std::string game_server_response = hmw_tcp_utils::GET_url(server_address, true, 1500L, true, 3);
 
 		if (game_server_response.empty())
 		{

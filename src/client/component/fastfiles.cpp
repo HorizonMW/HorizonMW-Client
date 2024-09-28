@@ -71,9 +71,9 @@ namespace fastfiles
 
 			is_mod_pre_gfx = zone_name == "mod_pre_gfx"s;
 			current_fastfile.access([&](std::string& fastfile)
-			{
-				fastfile = zone_name;
-			});
+				{
+					fastfile = zone_name;
+				});
 
 			auto result = db_try_load_x_file_internal_hook.invoke<int>(zone_name, flags);
 			if (!result)
@@ -83,7 +83,7 @@ namespace fastfiles
 #endif
 			}
 		}
-		
+
 		// this function will only work if client is built in Debug
 		void dump_gsc_script(const std::string& name, game::XAssetHeader header)
 		{
@@ -161,13 +161,13 @@ namespace fastfiles
 			{
 				console::print(
 					result.data == nullptr
-						? console::con_type_error
-						: console::con_type_warning,
+					? console::con_type_error
+					: console::con_type_warning,
 					"Waited %i msec for %sasset \"%s\", of type \"%s\"\n",
 					diff,
 					result.data == nullptr
-						? "missing "
-						: "",
+					? "missing "
+					: "",
 					name,
 					game::g_assetNames[type]
 				);
@@ -258,13 +258,13 @@ namespace fastfiles
 			}
 
 			const auto handle = CreateFileA(path.data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-					FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING, nullptr);
+				FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING, nullptr);
 			if (handle != INVALID_HANDLE_VALUE)
 			{
 				fastfile_handles.access([&](std::vector<HANDLE>& handles)
-				{
-					handles.push_back(handle);
-				});
+					{
+						handles.push_back(handle);
+					});
 			}
 
 			return handle;
@@ -413,6 +413,8 @@ namespace fastfiles
 
 			try_load_zone("h2m_post_gfx", true);
 			try_load_zone("h2m_common", true);
+			try_load_zone("h2m_clantags", true); //idk if this is the right place to add it but it works i guess
+			
 
 			game::DB_LoadXAssets(data.data(), static_cast<std::uint32_t>(data.size()), syncMode);
 		}
@@ -532,7 +534,7 @@ namespace fastfiles
 		}
 
 		utils::hook::detour db_unload_x_zones_hook;
-		void db_unload_x_zones_stub(const unsigned short* unload_zones, 
+		void db_unload_x_zones_stub(const unsigned short* unload_zones,
 			const unsigned int unload_count, const bool create_default)
 		{
 			for (auto i = 0u; i < unload_count; i++)
@@ -592,7 +594,7 @@ namespace fastfiles
 		char* reallocate_asset_pool()
 		{
 			constexpr auto element_size = get_asset_type_size(Type);
-			static char new_pool[element_size * Size] = {0};
+			static char new_pool[element_size * Size] = { 0 };
 			static_assert(element_size != 0);
 			assert(element_size == game::DB_GetXAssetTypeSize(Type));
 
@@ -608,7 +610,7 @@ namespace fastfiles
 		char* reallocate_asset_pool_multiplier()
 		{
 			constexpr auto pool_size = get_pool_type_size(Type);
-			return reallocate_asset_pool<Type, pool_size * Multiplier>();
+			return reallocate_asset_pool<Type, pool_size* Multiplier>();
 		}
 
 #define RVA(ptr) static_cast<uint32_t>(reinterpret_cast<size_t>(ptr) - 0_b)
@@ -644,8 +646,8 @@ namespace fastfiles
 			utils::hook::set<uint32_t>(0x104BD2_b + 4, RVA(weapon_strings) - 0x38F1750);
 
 			reallocate_asset_pool<game::ASSET_TYPE_WEAPON, pool_size>();
-				
-			utils::hook::inject(0x2E3005_b + 3, 
+
+			utils::hook::inject(0x2E3005_b + 3,
 				reinterpret_cast<void*>(reinterpret_cast<size_t>(weapon_complete_defs) + 8));
 
 			utils::hook::inject(0xED734_b + 3, weapon_complete_defs);
@@ -1020,26 +1022,26 @@ namespace fastfiles
 			utils::hook::set<uint32_t>(0x104C8A_b + 4, RVA(attachment_strings) - 0x38F1750);
 
 			const auto sub_118540_stub = [](utils::hook::assembler& a)
-			{
-				a.mov(rax, reinterpret_cast<size_t>(&attachment_array[0]));
-				a.mov(r8d, pool_size);
-				a.mov(rdx, rax);
-				a.mov(ecx, game::ASSET_TYPE_ATTACHMENT);
-				a.call(0x59D460_b);
-				a.jmp(0x118573_b);
-			};
+				{
+					a.mov(rax, reinterpret_cast<size_t>(&attachment_array[0]));
+					a.mov(r8d, pool_size);
+					a.mov(rdx, rax);
+					a.mov(ecx, game::ASSET_TYPE_ATTACHMENT);
+					a.call(0x59D460_b);
+					a.jmp(0x118573_b);
+				};
 
 			const auto loc_1185A0_stub = [](utils::hook::assembler& a)
-			{
-				a.mov(rax, reinterpret_cast<size_t>(&attachment_array[0]));
-				a.push(rbx);
-				a.imul(rbx, 8);
-				a.mov(rcx, qword_ptr(rax, rbx));
-				a.pop(rbx);
-				a.cmp(qword_ptr(rcx, 8), 0);
-				a.lea(rsi, qword_ptr(rcx, 8));
-				a.jmp(0x1185AE_b);
-			};
+				{
+					a.mov(rax, reinterpret_cast<size_t>(&attachment_array[0]));
+					a.push(rbx);
+					a.imul(rbx, 8);
+					a.mov(rcx, qword_ptr(rax, rbx));
+					a.pop(rbx);
+					a.cmp(qword_ptr(rcx, 8), 0);
+					a.lea(rsi, qword_ptr(rcx, 8));
+					a.jmp(0x1185AE_b);
+				};
 
 			utils::hook::jump(0x11855F_b, utils::hook::assemble(sub_118540_stub), true);
 			utils::hook::jump(0x1185A0_b, utils::hook::assemble(loc_1185A0_stub), true);
@@ -1119,31 +1121,31 @@ namespace fastfiles
 	std::string get_current_fastfile()
 	{
 		return current_fastfile.access<std::string>([&](std::string& fastfile)
-		{
-			return fastfile;
-		});
+			{
+				return fastfile;
+			});
 	}
 
 	void enum_assets(const game::XAssetType type,
 		const std::function<void(game::XAssetHeader)>& callback, const bool includeOverride)
 	{
 		game::DB_EnumXAssets_Internal(type, static_cast<void(*)(game::XAssetHeader, void*)>([](game::XAssetHeader header, void* data)
-		{
-			const auto& cb = *static_cast<const std::function<void(game::XAssetHeader)>*>(data);
-			cb(header);
-		}), &callback, includeOverride);
+			{
+				const auto& cb = *static_cast<const std::function<void(game::XAssetHeader)>*>(data);
+				cb(header);
+			}), &callback, includeOverride);
 	}
 
 	void close_fastfile_handles()
 	{
 		fastfile_handles.access([&](std::vector<HANDLE>& handles)
-		{
-			for (const auto& handle : handles)
 			{
-				CloseHandle(handle);
-			}
-		});
-		
+				for (const auto& handle : handles)
+				{
+					CloseHandle(handle);
+				}
+			});
+
 	}
 
 	const char* get_zone_name(const unsigned int index)
@@ -1154,26 +1156,26 @@ namespace fastfiles
 	void set_usermap(const std::string& usermap)
 	{
 		current_usermap.access([&](std::optional<std::string>& current_usermap_)
-		{
-			current_usermap_ = usermap;
-		});
+			{
+				current_usermap_ = usermap;
+			});
 	}
 
 	void clear_usermap()
 	{
 		current_usermap.access([&](std::optional<std::string>& current_usermap_)
-		{
-			current_usermap_.reset();
-		});
+			{
+				current_usermap_.reset();
+			});
 	}
 
 	std::optional<std::string> get_current_usermap()
 	{
 		return current_usermap.access<std::optional<std::string>>([&](
 			std::optional<std::string>& current_usermap_)
-		{
-			return current_usermap_;
-		});
+			{
+				return current_usermap_;
+			});
 	}
 
 	bool usermap_exists(const std::string& name)
@@ -1258,7 +1260,7 @@ namespace fastfiles
 
 			utils::hook::jump(0x15AFC0_b, get_bsp_filename_stub);
 			utils::hook::call(0x112ED8_b, com_sprintf_stub);
-			
+
 			// Allow loading of mixed compressor types
 			utils::hook::nop(0x3687A7_b, 2);
 
@@ -1285,7 +1287,7 @@ namespace fastfiles
 
 			// dont load localized zone for custom maps
 			utils::hook::call(0x394A99_b, db_level_load_add_zone_stub);
-			
+
 
 			// prevent mod.ff from loading lua files
 			if (game::environment::is_mp())
@@ -1309,79 +1311,79 @@ namespace fastfiles
 			}
 
 			command::add("loadzone", [](const command::params& params)
-			{
-				if (params.size() < 2)
 				{
-					console::info("usage: loadzone <zone>\n");
-					return;
-				}
+					if (params.size() < 2)
+					{
+						console::info("usage: loadzone <zone>\n");
+						return;
+					}
 
-				const auto name = params.get(1);
-				if (!try_load_zone(name, false))
-				{
-					console::warn("loadzone: zone \"%s\" could not be found!\n", name);
-				}
-			});
+					const auto name = params.get(1);
+					if (!try_load_zone(name, false))
+					{
+						console::warn("loadzone: zone \"%s\" could not be found!\n", name);
+					}
+				});
 
 #ifdef DEBUG
 			command::add("poolUsages", []()
-			{
-				for (auto i = 0; i < game::ASSET_TYPE_COUNT; i++)
 				{
-					auto count = 0;
-					enum_assets(static_cast<game::XAssetType>(i), [&](game::XAssetHeader header)
+					for (auto i = 0; i < game::ASSET_TYPE_COUNT; i++)
 					{
-						count++;
-					}, true);
+						auto count = 0;
+						enum_assets(static_cast<game::XAssetType>(i), [&](game::XAssetHeader header)
+							{
+								count++;
+							}, true);
 
-					console::info("%i %s: %i / %i\n", i, game::g_assetNames[i], count, game::g_poolSize[i]);
-				}
-			});
+						console::info("%i %s: %i / %i\n", i, game::g_assetNames[i], count, game::g_poolSize[i]);
+					}
+				});
 
 			command::add("poolUsage", [](const command::params& params)
-			{
-				if (params.size() < 2)
 				{
-					console::info("Usage: poolUsage <type>\n");
-					return;
-				}
+					if (params.size() < 2)
+					{
+						console::info("Usage: poolUsage <type>\n");
+						return;
+					}
 
-				const auto type = static_cast<game::XAssetType>(std::atoi(params.get(1)));
+					const auto type = static_cast<game::XAssetType>(std::atoi(params.get(1)));
 
-				auto count = 0;
-				enum_assets(type, [&](game::XAssetHeader header)
-				{
-					count++;
-				}, true);
+					auto count = 0;
+					enum_assets(type, [&](game::XAssetHeader header)
+						{
+							count++;
+						}, true);
 
-				console::info("%i %s: %i / %i\n", type, game::g_assetNames[type], count, game::g_poolSize[type]);
-			});
+					console::info("%i %s: %i / %i\n", type, game::g_assetNames[type], count, game::g_poolSize[type]);
+				});
 
 			command::add("assetCount", [](const command::params& params)
-			{
-				auto count = 0;
-				for (auto i = 0; i < game::ASSET_TYPE_COUNT; i++)
 				{
-					enum_assets(static_cast<game::XAssetType>(i), [&](game::XAssetHeader header)
+					auto count = 0;
+					for (auto i = 0; i < game::ASSET_TYPE_COUNT; i++)
 					{
-						count++;
-					}, true);
-				}
+						enum_assets(static_cast<game::XAssetType>(i), [&](game::XAssetHeader header)
+							{
+								count++;
+							}, true);
+					}
 
-				console::info("assets: %i / %i\n", count, 155000);
-			});
+					console::info("assets: %i / %i\n", count, 155000);
+				});
 
 			command::add("loadedzones", [](const command::params& params)
-			{
-				console::info("---- Loaded Zones ----");
-				auto count = 0;
-				for (auto i = 1u; i <= *game::g_zoneCount; i++)
 				{
-					console::info("%s\n", fastfiles::get_zone_name(i));
-					count++;
-				}
-				console::info("---- %i Loaded Zones ----", count);
-			});
+					console::info("---- Loaded Zones ----");
+					auto count = 0;
+					for (auto i = 1u; i <= *game::g_zoneCount; i++)
+					{
+						console::info("%s\n", fastfiles::get_zone_name(i));
+						count++;
+					}
+					console::info("---- %i Loaded Zones ----", count);
+				});
 #endif
 		}
 	};
