@@ -309,6 +309,11 @@ namespace movement
 			}
 		}
 
+		bool bg_has_perk(const unsigned int* perks, unsigned int perk_index)
+		{
+			return ((1 << (perk_index & 0x1F)) & perks[perk_index >> 5]) != 0;
+		}
+
 		/*
 			This detour fixes an issue when you're on servers and trying to wrist twist with +usereload
 			I added an additional check to see if you're pressing the usereload button when the sprint raise event is happening,
@@ -323,11 +328,11 @@ namespace movement
 				return true;
 			}
 
-			int v5 = ps->perks[3] & 1;
-			int v6 = (0xCF0D - (v5 != 0)) & 0xFFFFFDCF | 0x30;
+			int v5 = bg_has_perk(ps->perks, game::PERK_BALLCARRIER);
+			int v6 = ((0xCF0D - (v5 != 0)) & ~0x230) | (game::BUTTON_USERELOAD | game::BUTTON_RELOAD);
 
-			if ((ps->perks[1] & 0x40000000) == 0)
-				v6 = (0xCF0D - (v5 != 0)) | 0x30;
+			if (!bg_has_perk(ps->perks, game::PERK_RESISTEXPLOSION))
+				v6 = (0xCF0D - (v5 != 0)) | (game::BUTTON_USERELOAD | game::BUTTON_RELOAD);
 
 			int weaponState = ps->weapState[0].weaponState;
 
@@ -349,23 +354,24 @@ namespace movement
 		utils::hook::detour begin_weapon_change_hook;
 		void begin_weapon_change_stub(game::pmove_t* pm, game::Weapon new_weap, bool is_new_alt, bool quick, unsigned int* holdrand)
 		{
-			auto keep_anim = false;
+			auto stall_anim = false;
 
-			auto anim = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim;
-			auto anim_two = pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim;
+			auto right_anim = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim;
+			auto left_anim = pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim;
 
-			auto should_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
-			if (should_stall)
+			auto should_sprint_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
+			auto should_still_stall = (right_anim == game::WEAP_ANIM_EMPTY_IDLE || left_anim == game::WEAP_ANIM_EMPTY_IDLE);
+			if (should_sprint_stall || should_still_stall)
 			{
-				keep_anim = true;
+				stall_anim = true;
 			}
 
 			begin_weapon_change_hook.invoke<void>(pm, new_weap, is_new_alt, quick, holdrand);
 
-			if (keep_anim)
+			if (stall_anim)
 			{
-				pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim = anim;
-				pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim = anim_two;
+				pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim = right_anim;
+				pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim = left_anim;
 			}
 		}
 
@@ -377,21 +383,30 @@ namespace movement
 
 		utils::hook::detour start_weapon_anim_hook;
 		void start_weapon_anim_stub(uint64_t local_client_num, game::Weapon weapon_idx, game::PlayerHandIndex player_hand_idx,
-			game::weapAnimFiles_t blend_in_anim_index, game::weapAnimFiles_t blend_out_anim_index, float anim_length)
+			game::weapAnimFiles_t blend_in_anim_index, game::weapAnimFiles_t blend_out_anim_index, float transition_time)
 		{
 			auto* cg_array = game::getCGArray();
 			auto* playerstate = &cg_array[local_client_num].predictedPlayerState;
 
 			auto should_sprint = (playerstate->sprintState.lastSprintStart < playerstate->sprintState.lastSprintEnd);
 
+#ifdef _DEBUG
+			// barrel rolls go from WEAP_ANIM_QUICK_RAISE/WEAP_ANIM_RAISE to WEAP_ANIM_IDLE
+			if ((blend_out_anim_index == game::WEAP_ANIM_QUICK_RAISE || blend_out_anim_index == game::WEAP_ANIM_RAISE)
+				&& is_previous_anim(playerstate->weapState[player_hand_idx].weapAnim) && should_sprint)
+			{
+				console::debug("[%d] should left hand flip! (out: %d, in: %d)", player_hand_idx, blend_out_anim_index, blend_in_anim_index);
+			}
+#endif
+
 			if ((blend_out_anim_index == game::WEAP_ANIM_SPRINT_IN || blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP) 
 				&& is_previous_anim(playerstate->weapState[player_hand_idx].weapAnim) && should_sprint)
 			{
 				blend_out_anim_index = game::WEAP_ANIM_QUICK_DROP;
-				anim_length = 0.5f;
+				transition_time = 0.5f;
 			}
 
-			start_weapon_anim_hook.invoke<void>(local_client_num, weapon_idx, player_hand_idx, blend_in_anim_index, blend_out_anim_index, anim_length);
+			start_weapon_anim_hook.invoke<void>(local_client_num, weapon_idx, player_hand_idx, blend_in_anim_index, blend_out_anim_index, transition_time);
 		}
 	}
 
