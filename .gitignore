@@ -1,3 +1,9 @@
 .vs
 .vscode
 build/
+/src/client/component/bullet.cpp
+/src/client/component/dedicated.cpp
+/src/client/component/party.cpp
+/src/client/component/server_list.cpp
+/src/client/component/server_list.hpp
+/src/client/component/ui_scripting.cpp
