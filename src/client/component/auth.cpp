@@ -72,7 +72,7 @@ namespace auth
 			}
 
 			const auto size = std::min(data_out.cbData, 52ul);
-			std::string result{reinterpret_cast<char*>(data_out.pbData), size};
+			std::string result{ reinterpret_cast<char*>(data_out.pbData), size };
 			LocalFree(data_out.pbData);
 
 			return result;
@@ -113,9 +113,9 @@ namespace auth
 			std::string connect_string(format, len);
 			game::SV_Cmd_TokenizeString(connect_string.data());
 			const auto _ = gsl::finally([]()
-			{
-				game::SV_Cmd_EndTokenizedString();
-			});
+				{
+					game::SV_Cmd_EndTokenizedString();
+				});
 
 			const command::params_sv params;
 			if (params.size() < 3)
@@ -123,7 +123,7 @@ namespace auth
 				return false;
 			}
 
-			utils::info_string info_string{std::string{params[2]}};
+			utils::info_string info_string{ std::string{params[2]} };
 
 			// add discord ID to connect info string
 			info_string.set(hash_string("discord_id"), discord::get_discord_id());
@@ -167,7 +167,7 @@ namespace auth
 				return;
 			}
 
-			const utils::info_string info_string{std::string{params[2]}};
+			const utils::info_string info_string{ std::string{params[2]} };
 
 			const auto steam_id = info_string.get(hash_string("xuid"));
 			const auto challenge = info_string.get(hash_string("challenge"));
@@ -208,14 +208,20 @@ namespace auth
 			if (!clantag.empty())
 			{
 				game::StringTable* gamertags_pc{};
+				game::StringTable* horizongamertags_pc{};
+
+				// had to add ours here cuz we cant repack the original one
 				game::StringTable_GetAsset(OBF("mp/activisiongamertags_pc.csv"), &gamertags_pc);
+				game::StringTable_GetAsset(OBF("mp/horizongamertags_pc.csv"), &horizongamertags_pc);
 
 				for (auto& tag_s : clantags::tags)
 				{
 					auto name_modified = utils::string::va("^%c%c%c%c%s", 1, tag_s.second.width, tag_s.second.height, 2, tag_s.second.short_name.data());
 					if (tag_s.first == clantag || !strcmp(clantag.data(), name_modified))
 					{
-						if (!gamertags_pc || !gamertags_pc->rowCount)
+						
+						if ((!gamertags_pc || !gamertags_pc->rowCount) &&
+							(!horizongamertags_pc || !horizongamertags_pc->rowCount))
 						{
 							CALL(&network::send, *from, OBF("error"), OBF("Failed to authenticate tag"), '\n');
 							return;
@@ -230,16 +236,56 @@ namespace auth
 
 						auto discord_id = info_string.get(hash_string("discord_id"));
 
-						auto gamertags_row_count = game::StringTable_GetRowCount(gamertags_pc);
-						for (auto row_i = 0; row_i < gamertags_row_count; ++row_i)
+						// could prob do it in one check?
+						auto gamertags_row_count_activision = game::StringTable_GetRowCount(gamertags_pc);
+						for (auto row_i = 0; row_i < gamertags_row_count_activision; ++row_i)
 						{
 							auto tag = game::StringTable_GetColumnValueForRow(gamertags_pc, row_i, 0);
 							auto id = game::StringTable_GetColumnValueForRow(gamertags_pc, row_i, 1);
 
 							if (!strcmp(discord_id.c_str(), id))
 							{
-								// let anyone with H2M tag use anything
-								if (!strcmp(tag, "H2M") || !strcmp(tag, clantag.c_str()))
+								
+								if (!strcmp(tag, "HMW"))
+								{
+									game::SV_DirectConnect(from);
+									return;
+								}
+
+								if (!strcmp(tag, "H2M") && strcmp(clantag.c_str(), "HMW"))
+								{
+									game::SV_DirectConnect(from);
+									return;
+								}
+
+								if (!strcmp(tag, clantag.c_str()))
+								{
+									game::SV_DirectConnect(from);
+									return;
+								}
+							}
+						}
+						// UwU tags
+						auto gamertags_row_count_horizon = game::StringTable_GetRowCount(horizongamertags_pc);
+						for (auto row_i = 0; row_i < gamertags_row_count_horizon; ++row_i)
+						{
+							auto tag = game::StringTable_GetColumnValueForRow(horizongamertags_pc, row_i, 0);
+							auto id = game::StringTable_GetColumnValueForRow(horizongamertags_pc, row_i, 1);
+
+							if (!strcmp(discord_id.c_str(), id))
+							{
+								if (!strcmp(tag, "HMW"))
+								{
+									game::SV_DirectConnect(from);
+									return;
+								}
+
+								if (!strcmp(tag, "H2M") && strcmp(clantag.c_str(), "HMW"))
+								{
+									game::SV_DirectConnect(from);
+									return;
+								}
+								if (!strcmp(tag, clantag.c_str()))
 								{
 									game::SV_DirectConnect(from);
 									return;
@@ -259,39 +305,39 @@ namespace auth
 		void* get_direct_connect_stub()
 		{
 			return utils::hook::assemble([](utils::hook::assembler& a)
-			{
-				a.lea(rcx, qword_ptr(rsp, 0x20));
-				a.movaps(xmmword_ptr(rsp, 0x20), xmm0);
+				{
+					a.lea(rcx, qword_ptr(rsp, 0x20));
+					a.movaps(xmmword_ptr(rsp, 0x20), xmm0);
 
-				a.pushad64();
-				a.mov(rdx, rsi);
-				a.call_aligned(direct_connect);
-				a.popad64();
+					a.pushad64();
+					a.mov(rdx, rsi);
+					a.call_aligned(direct_connect);
+					a.popad64();
 
-				a.jmp(0x1CAF64_b);
-			});
+					a.jmp(0x1CAF64_b);
+				});
 		}
 
 		void* get_send_connect_data_stub()
 		{
 			return utils::hook::assemble([](utils::hook::assembler& a)
-			{
-				const auto false_ = a.newLabel();
-				const auto original = a.newLabel();
+				{
+					const auto false_ = a.newLabel();
+					const auto original = a.newLabel();
 
-				a.mov(ecx, eax);
-				a.lea(r8, qword_ptr(rbp, 0x4C0));
-				a.mov(r9d, ebx);
-				a.lea(rdx, qword_ptr(rsp, 0x30));
+					a.mov(ecx, eax);
+					a.lea(r8, qword_ptr(rbp, 0x4C0));
+					a.mov(r9d, ebx);
+					a.lea(rdx, qword_ptr(rsp, 0x30));
 
-				a.pushad64();
-				a.call_aligned(send_connect_data);
-				a.test(al, al);
-				a.popad64();
+					a.pushad64();
+					a.call_aligned(send_connect_data);
+					a.test(al, al);
+					a.popad64();
 
-				a.mov(rbx, qword_ptr(rsp, 0x9F0));
-				a.jmp(0x12D446_b);
-			});
+					a.mov(rbx, qword_ptr(rsp, 0x9F0));
+					a.jmp(0x12D446_b);
+				});
 		}
 	}
 

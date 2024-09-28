@@ -267,14 +267,14 @@ namespace discord
 		void join_game(const char* join_secret)
 		{
 			scheduler::once([=]
-			{
-				game::netadr_s target{};
-				if (game::NET_StringToAdr(join_secret, &target))
 				{
-					console::info("Discord: Connecting to server '%s'\n", join_secret);
-					party::connect(target);
-				}
-			}, scheduler::pipeline::main);
+					game::netadr_s target{};
+					if (game::NET_StringToAdr(join_secret, &target))
+					{
+						console::info("Discord: Connecting to server '%s'\n", join_secret);
+						party::connect(target);
+					}
+				}, scheduler::pipeline::main);
 		}
 
 		std::string get_display_name(const DiscordUser* user)
@@ -330,19 +330,19 @@ namespace discord
 			}
 
 			scheduler::once([=]
-			{
-				const ui_scripting::table request_table{};
-				request_table.set("avatar", avatar);
-				request_table.set("discriminator", discriminator);
-				request_table.set("userid", user_id);
-				request_table.set("username", username);
-				request_table.set("displayname", display_name);
-
-				ui_scripting::notify("discord_join_request",
 				{
-					{"request", request_table}
-				});
-			}, scheduler::pipeline::lui);
+					const ui_scripting::table request_table{};
+					request_table.set("avatar", avatar);
+					request_table.set("discriminator", discriminator);
+					request_table.set("userid", user_id);
+					request_table.set("username", username);
+					request_table.set("displayname", display_name);
+
+					ui_scripting::notify("discord_join_request",
+						{
+							{"request", request_table}
+						});
+				}, scheduler::pipeline::lui);
 
 			const auto material_name = utils::string::va(AVATAR, user_id.data());
 			if (!avatar.empty() && !avatar_material_map.contains(material_name))
@@ -354,21 +354,21 @@ namespace discord
 		void set_default_bindings()
 		{
 			const auto set_binding = [](const std::string& command, const game::keyNum_t key)
-			{
-				const auto binding = game::Key_GetBindingForCmd(command.data());
-				for (auto i = 0; i < 256; i++)
 				{
-					if (game::playerKeys[0].keys[i].binding == binding)
+					const auto binding = game::Key_GetBindingForCmd(command.data());
+					for (auto i = 0; i < 256; i++)
 					{
-						return;
+						if (game::playerKeys[0].keys[i].binding == binding)
+						{
+							return;
+						}
 					}
-				}
 
-				if (game::playerKeys[0].keys[key].binding == 0)
-				{
-					game::Key_SetBinding(0, key, binding);
-				}
-			};
+					if (game::playerKeys[0].keys[key].binding == 0)
+					{
+						game::Key_SetBinding(0, key, binding);
+					}
+				};
 
 			set_binding("discord_accept", game::K_F1);
 			set_binding("discord_deny", game::K_F2);
@@ -384,33 +384,66 @@ namespace discord
 
 			game::StringTable* gamertags_pc;
 			game::StringTable* clantags;
+			game::StringTable* horizongamertags_pc;
+			game::StringTable* horizonclantags;
 
 			if (clantag && *clantag)
 			{
+				// new csv files cuz fuck zonetool
 				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisiongamertags_pc.csv", &gamertags_pc);
 				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisionclantags.csv", &clantags);
+				utils::hook::invoke<void>(0x5A0A80_b, "mp/horizongamertags_pc.csv", &horizongamertags_pc);
+				utils::hook::invoke<void>(0x5A0A80_b, "mp/horizonclantags.csv", &horizonclantags);
 
-				if (!gamertags_pc || !gamertags_pc->rowCount || !clantags || !clantags->rowCount)
+				if ((!gamertags_pc || !gamertags_pc->rowCount) ||
+					(!clantags || !clantags->rowCount) ||
+					(!horizongamertags_pc || !horizongamertags_pc->rowCount) ||
+					(!horizonclantags || !horizonclantags->rowCount))
 				{
 					return false;
 				}
 
-				auto clantag_lookup = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
-				if (!*clantag_lookup)
+				auto clantag_lookup_activision = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
+				auto clantag_lookup_horizon = utils::hook::invoke<const char*>(0x5A0B10_b, horizonclantags, 1, clantag, 0);
+
+				if (!*clantag_lookup_activision && !*clantag_lookup_horizon)
 				{
 					return true;
 				}
 
-				auto gamertags_row_count = utils::hook::invoke<int>(0x5A0B00_b, gamertags_pc);
-				for (auto row_i = 0; row_i < gamertags_row_count; ++row_i)
+				auto gamertags_row_count_activision = utils::hook::invoke<int>(0x5A0B00_b, gamertags_pc);
+				for (auto row_i = 0; row_i < gamertags_row_count_activision; ++row_i)
 				{
 					auto tag = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 0);
 					auto id = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 1);
 
 					if (!strcmp(discord_user_id.c_str(), id))
 					{
-						// let anyone with H2M tag use anything
-						if (!strcmp(tag, "H2M") || !strcmp(clantag_lookup, clantag))
+						if (!strcmp(tag, "HMW"))
+						{
+							return true;
+						}
+						if (!strcmp(tag, "H2M") && strcmp(clantag, "HMW"))
+						{
+							return true;
+						}
+					}
+				}
+
+				auto gamertags_row_count_horizon = utils::hook::invoke<int>(0x5A0B00_b, horizongamertags_pc);
+				for (auto row_i = 0; row_i < gamertags_row_count_horizon; ++row_i)
+				{
+					auto tag = utils::hook::invoke<char*>(0x5A0AC0_b, horizongamertags_pc, row_i, 0);
+					auto id = utils::hook::invoke<char*>(0x5A0AC0_b, horizongamertags_pc, row_i, 1);
+
+					if (!strcmp(discord_user_id.c_str(), id))
+					{
+						if (!strcmp(tag, "HMW"))
+						{
+							return true;
+						}
+
+						if (!strcmp(tag, "H2M") && strcmp(clantag, "HMW"))
 						{
 							return true;
 						}
@@ -437,9 +470,9 @@ namespace discord
 	void respond(const std::string& id, int reply)
 	{
 		scheduler::once([=]()
-		{
-			Discord_Respond(id.data(), reply);
-		}, scheduler::pipeline::async);
+			{
+				Discord_Respond(id.data(), reply);
+			}, scheduler::pipeline::async);
 	}
 
 	std::string get_discord_id()
@@ -479,10 +512,10 @@ namespace discord
 			if (game::environment::is_mp())
 			{
 				scheduler::on_game_initialized([]
-				{
-					scheduler::once(download_default_avatar, scheduler::async);
-					set_default_bindings();
-				}, scheduler::main);
+					{
+						scheduler::once(download_default_avatar, scheduler::async);
+						set_default_bindings();
+					}, scheduler::main);
 			}
 
 			scheduler::loop(Discord_RunCallbacks, scheduler::async, 500ms);
@@ -491,14 +524,14 @@ namespace discord
 			initialized_ = true;
 
 			command::add("discord_accept", []()
-			{
-				ui_scripting::notify("discord_response", {{"accept", true}});
-			});
+				{
+					ui_scripting::notify("discord_response", { {"accept", true} });
+				});
 
 			command::add("discord_deny", []()
-			{
-				ui_scripting::notify("discord_response", {{"accept", false}});
-			});
+				{
+					ui_scripting::notify("discord_response", { {"accept", false} });
+				});
 
 			ui_activision_tag_allowed_hook.create(0x1D9800_b, ui_activision_tag_allowed_stub);
 		}
