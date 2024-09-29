@@ -134,6 +134,25 @@ namespace hmw_tcp_utils {
 						// Connection closed
 						return;
 					}
+
+					std::map<std::string, std::string> headers;
+
+					for (size_t i = 0; i < MG_MAX_HTTP_HEADERS && hm->headers[i].name.len > 0; i++) {
+						struct mg_str* name = &hm->headers[i].name;
+						struct mg_str* value = &hm->headers[i].value;
+
+						// Convert the mg_str to std::string
+						std::string headerName(name->buf, name->len);
+						std::string headerVal(value->buf, value->len);
+						headers.emplace(headerName, headerVal);
+
+						// Look for a specific header
+						if (headerName == "TestHeader") {
+							console::info("Processed test header: %s", headerVal);
+							continue;
+						}
+					}
+
 					std::string data = getInfo_Json();
 					mg_http_reply(c, 200, "", data.c_str());
 				}
