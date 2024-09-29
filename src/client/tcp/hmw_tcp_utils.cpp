@@ -164,7 +164,7 @@ namespace hmw_tcp_utils {
 		bool is_localhost(std::string port)
 		{
 			std::string url = "http://127.0.0.1:" + port + "/status";
-			std::string res = GET_url(url.c_str(), false, 1500L, false, 1);
+			std::string res = GET_url(url.c_str(), {}, false, 1500L, false, 1);
 			return res != "";
 		}
 	
@@ -387,7 +387,7 @@ std::string getInfo_Json()
 		return jsonString;
 	}
 
-std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, int retryMax) {
+std::string GET_url(const char* url, const std::map<std::string, std::string>& headers, bool addPing, long timeout, bool doRetry, int retryMax) {
 	CURL* curl;
 	CURLcode res;
 
@@ -406,6 +406,13 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GET_url_WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
+
+		struct curl_slist* curlHeaders = nullptr;
+		for (const auto& header : headers) {
+			std::string headerString = header.first + ": " + header.second;
+			curlHeaders = curl_slist_append(curlHeaders, headerString.c_str());
+		}
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);  // Set the headers option
 
 		res = curl_easy_perform(curl);
 
