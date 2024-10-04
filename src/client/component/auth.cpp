@@ -219,7 +219,6 @@ namespace auth
 					auto name_modified = utils::string::va("^%c%c%c%c%s", 1, tag_s.second.width, tag_s.second.height, 2, tag_s.second.short_name.data());
 					if (tag_s.first == clantag || !strcmp(clantag.data(), name_modified))
 					{
-						
 						if ((!gamertags_pc || !gamertags_pc->rowCount) &&
 							(!horizongamertags_pc || !horizongamertags_pc->rowCount))
 						{
@@ -236,28 +235,54 @@ namespace auth
 
 						auto discord_id = info_string.get(hash_string("discord_id"));
 
-						// could prob do it in one check?
-						auto gamertags_row_count_activision = game::StringTable_GetRowCount(gamertags_pc);
-						for (auto row_i = 0; row_i < gamertags_row_count_activision; ++row_i)
+						if (discord_id.empty())
+						{
+							if (clantag == "HMW" || clantag == "H2M")
+							{
+								CALL(&network::send, *from, OBF("error"), OBF("Tag not allowed"), '\n');
+								return;
+							}
+							for (auto row_i = 0; row_i < game::StringTable_GetRowCount(gamertags_pc); ++row_i)
+							{
+								auto tag = game::StringTable_GetColumnValueForRow(gamertags_pc, row_i, 0);
+								if (!strcmp(tag, clantag.c_str()))
+								{
+									CALL(&network::send, *from, OBF("error"), OBF("Tag not allowed"), '\n');
+									return;
+								}
+							}
+
+							for (auto row_i = 0; row_i < game::StringTable_GetRowCount(horizongamertags_pc); ++row_i)
+							{
+								auto tag = game::StringTable_GetColumnValueForRow(horizongamertags_pc, row_i, 0);
+								if (!strcmp(tag, clantag.c_str()))
+								{
+									CALL(&network::send, *from, OBF("error"), OBF("Tag not allowed"), '\n');
+									return;
+								}
+							}
+
+							game::SV_DirectConnect(from);
+							return;
+						}
+
+						for (auto row_i = 0; row_i < game::StringTable_GetRowCount(gamertags_pc); ++row_i)
 						{
 							auto tag = game::StringTable_GetColumnValueForRow(gamertags_pc, row_i, 0);
 							auto id = game::StringTable_GetColumnValueForRow(gamertags_pc, row_i, 1);
 
 							if (!strcmp(discord_id.c_str(), id))
 							{
-								
 								if (!strcmp(tag, "HMW"))
 								{
 									game::SV_DirectConnect(from);
 									return;
 								}
-
 								if (!strcmp(tag, "H2M") && strcmp(clantag.c_str(), "HMW"))
 								{
 									game::SV_DirectConnect(from);
 									return;
 								}
-
 								if (!strcmp(tag, clantag.c_str()))
 								{
 									game::SV_DirectConnect(from);
@@ -265,9 +290,8 @@ namespace auth
 								}
 							}
 						}
-						// UwU tags
-						auto gamertags_row_count_horizon = game::StringTable_GetRowCount(horizongamertags_pc);
-						for (auto row_i = 0; row_i < gamertags_row_count_horizon; ++row_i)
+
+						for (auto row_i = 0; row_i < game::StringTable_GetRowCount(horizongamertags_pc); ++row_i)
 						{
 							auto tag = game::StringTable_GetColumnValueForRow(horizongamertags_pc, row_i, 0);
 							auto id = game::StringTable_GetColumnValueForRow(horizongamertags_pc, row_i, 1);
@@ -279,7 +303,6 @@ namespace auth
 									game::SV_DirectConnect(from);
 									return;
 								}
-
 								if (!strcmp(tag, "H2M") && strcmp(clantag.c_str(), "HMW"))
 								{
 									game::SV_DirectConnect(from);
