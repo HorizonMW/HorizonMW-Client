@@ -309,11 +309,6 @@ namespace movement
 			}
 		}
 
-		bool bg_has_perk(const unsigned int* perks, unsigned int perk_index)
-		{
-			return ((1 << (perk_index & 0x1F)) & perks[perk_index >> 5]) != 0;
-		}
-
 		/*
 			This detour fixes an issue when you're on servers and trying to wrist twist with +usereload
 			I added an additional check to see if you're pressing the usereload button when the sprint raise event is happening,
@@ -328,10 +323,10 @@ namespace movement
 				return true;
 			}
 
-			int v5 = bg_has_perk(ps->perks, game::PERK_BALLCARRIER);
+			int v5 = game::BG_HasPerk(ps->perks, game::PERK_BALLCARRIER);
 			int v6 = ((0xCF0D - (v5 != 0)) & ~0x230) | (game::BUTTON_USERELOAD | game::BUTTON_RELOAD);
 
-			if (!bg_has_perk(ps->perks, game::PERK_RESISTEXPLOSION))
+			if (!game::BG_HasPerk(ps->perks, game::PERK_RESISTEXPLOSION))
 				v6 = (0xCF0D - (v5 != 0)) | (game::BUTTON_USERELOAD | game::BUTTON_RELOAD);
 
 			int weaponState = ps->weapState[0].weaponState;
@@ -359,12 +354,28 @@ namespace movement
 			auto right_anim = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim;
 			auto left_anim = pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim;
 
+			// (WEAP_ANIM_IDLE | ANIM_TOGGLEBIT)	| WEAP_ANIM_EMPTY_IDLE
+			// WEAP_ANIM_EMPTY_IDLE					| (WEAP_ANIM_IDLE | ANIM_TOGGLEBIT)
+
 			auto should_sprint_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
-			auto should_still_stall = (right_anim == game::WEAP_ANIM_EMPTY_IDLE || left_anim == game::WEAP_ANIM_EMPTY_IDLE);
+			// Patoke @todo: make it so this will only stall u if u sprinted beforehand
+			//	the sprint action is slightly delayed after u shoot, since the shooting animation is being played, running won't replace this one until it's done
+			//	meaning the sprint stall still takes effect even if the current weapon animation isn't supposed to be running
+			//	the check still takes place but our current animation isn't overriden, meaning we stall our animations while another one is playing
+			auto should_still_stall = ((right_anim == game::WEAP_ANIM_EMPTY_IDLE && left_anim == (game::WEAP_ANIM_IDLE | ANIM_TOGGLEBIT)) ||
+									(left_anim == game::WEAP_ANIM_EMPTY_IDLE && right_anim == (game::WEAP_ANIM_IDLE | ANIM_TOGGLEBIT)));
+#ifdef _DEBUG
 			if (should_sprint_stall || should_still_stall)
+			{
+				console::debug("%d | %d", right_anim, left_anim);
+				stall_anim = true;
+			}
+#else
+			if (should_sprint_stall)
 			{
 				stall_anim = true;
 			}
+#endif
 
 			begin_weapon_change_hook.invoke<void>(pm, new_weap, is_new_alt, quick, holdrand);
 
