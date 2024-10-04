@@ -69,6 +69,21 @@ namespace game
 		return static_cast<connstate_t>(*(keyCatchers + 1));
 	}
 
+	uint32_t BG_GetPerkBit(unsigned int perkIndex)
+	{
+		return (1 << (perkIndex & 0x1F));
+	}
+
+	uint32_t BG_GetPerkSlot(unsigned int perkIndex)
+	{
+		return (perkIndex >> 5);
+	}
+
+	bool BG_HasPerk(const unsigned int* perks, unsigned int perkIndex)
+	{
+		return (perks[BG_GetPerkSlot(perkIndex)] & BG_GetPerkBit(perkIndex)) != 0;
+	}
+
 	namespace environment
 	{
 		launcher::mode mode = launcher::mode::none;

@@ -46,7 +46,14 @@ namespace filesystem
 			initialized = true;
 
 			filesystem::register_path(L".");
-			filesystem::register_path(L"h2m-mod");
+			if (game::environment::is_dedi()) 
+			{
+				filesystem::register_path(L"h2m-mod\\zone");
+			}
+			else 
+			{
+				filesystem::register_path(L"h2m-mod");
+			}
 
 			// TODO: enable these for release
 #ifdef DEBUG

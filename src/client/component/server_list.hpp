@@ -33,6 +33,7 @@ namespace server_list
 		std::string connect_address;
 		std::string game_version;
 		bool outdated;
+		bool is_official;
 	};
 
 	int get_player_count();

@@ -134,6 +134,22 @@ namespace hmw_tcp_utils {
 						// Connection closed
 						return;
 					}
+
+					std::map<std::string, std::string> headers;
+
+					for (size_t i = 0; i < MG_MAX_HTTP_HEADERS && hm->headers[i].name.len > 0; i++) {
+						struct mg_str* name = &hm->headers[i].name;
+						struct mg_str* value = &hm->headers[i].value;
+
+						// Convert the mg_str to std::string
+						std::string headerName(name->buf, name->len);
+						std::string headerVal(value->buf, value->len);
+						headers.emplace(headerName, headerVal);
+
+						// FUTURE: Process any header names here
+						
+					}
+
 					std::string data = getInfo_Json();
 					mg_http_reply(c, 200, "", data.c_str());
 				}
@@ -164,7 +180,7 @@ namespace hmw_tcp_utils {
 		bool is_localhost(std::string port)
 		{
 			std::string url = "http://127.0.0.1:" + port + "/status";
-			std::string res = GET_url(url.c_str(), false, 1500L, false, 1);
+			std::string res = GET_url(url.c_str(), {}, false, 1500L, false, 1);
 			return res != "";
 		}
 	
@@ -387,7 +403,7 @@ std::string getInfo_Json()
 		return jsonString;
 	}
 
-std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, int retryMax) {
+std::string GET_url(const char* url, const std::map<std::string, std::string>& headers, bool addPing, long timeout, bool doRetry, int retryMax) {
 	CURL* curl;
 	CURLcode res;
 
@@ -406,6 +422,13 @@ std::string GET_url(const char* url, bool addPing, long timeout, bool doRetry, i
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, GET_url_WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
+
+		struct curl_slist* curlHeaders = nullptr;
+		for (const auto& header : headers) {
+			std::string headerString = header.first + ": " + header.second;
+			curlHeaders = curl_slist_append(curlHeaders, headerString.c_str());
+		}
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);  // Set the headers option
 
 		res = curl_easy_perform(curl);
 

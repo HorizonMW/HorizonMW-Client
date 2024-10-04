@@ -328,8 +328,8 @@ namespace gameplay
 #endif
 
 			// Always use regular quickdraw value (IW4 faithful)
-			utils::hook::nop(0x2D6EFC_b, 2);
-			utils::hook::nop(0x2DD646_b, 2);
+			utils::hook::nop(0x2D6F03_b, 2); // PM_UpdateAimDownSightLerp
+			utils::hook::nop(0x2DD64D_b, 2); // PM_Weapon_StartFiring
 
 			// Influence PM_JitterPoint code flow so the trace->startsolid checks are 'ignored'
 			pm_player_trace_hook.create(0x2D14C0_b, &pm_player_trace_stub);
@@ -399,6 +399,11 @@ namespace gameplay
 			dvars::g_playerCollision = dvars::register_bool("g_playerCollision", true, dvar_flags,
 				"Flag whether player collision is on or off");
 			cm_transformed_capsule_trace_hook.create(0x4D63C0_b, cm_transformed_capsule_trace_stub);
+
+			// override PERK_MARATHON checks for PERK_LONGERSPRINT, PERK_MARATHON in H1 is in the second slot, so we override PERK_LONGERSPRINT which is in the first
+			utils::hook::set<uint32_t>(0x2CC682_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeftLastTime
+			utils::hook::set<uint32_t>(0x2CC609_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeft
+			utils::hook::set<uint32_t>(0x2CFAD7_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_UpdateSprint
 
 #ifdef DEBUG
 			// Make noclip work

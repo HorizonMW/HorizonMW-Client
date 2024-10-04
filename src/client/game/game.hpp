@@ -63,6 +63,10 @@ namespace game
 	void Cmd_EndTokenizeString();
 
 	connstate_t CL_GetLocalClientConnectionState(const int localClientNum);
+
+	uint32_t BG_GetPerkBit(unsigned int perkIndex);
+	uint32_t BG_GetPerkSlot(unsigned int perkIndex);
+	bool BG_HasPerk(const unsigned int* perks, unsigned int perkIndex);
 }
 
 size_t operator"" _b(const size_t ptr);

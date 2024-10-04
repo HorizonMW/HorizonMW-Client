@@ -823,7 +823,7 @@ namespace party
 
 		std::string ipStr = std::to_string(ip[0]) + "." + std::to_string(ip[1]) + "." + std::to_string(ip[2]) + "." + std::to_string(ip[3]);
 		std::string url = "http://" + ipStr + ":" + std::to_string(port) + "/getInfo";
-		std::string infoJson = hmw_tcp_utils::GET_url(url.c_str(), false, 1500L, true, 3);
+		std::string infoJson = hmw_tcp_utils::GET_url(url.c_str(), {}, false, 1500L, true, 3);
 
 		if (infoJson.empty()) {
 			menu_error("Connection failed: Failed to get response from server.");
