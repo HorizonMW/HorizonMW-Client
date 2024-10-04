@@ -328,8 +328,8 @@ namespace gameplay
 #endif
 
 			// Always use regular quickdraw value (IW4 faithful)
-			utils::hook::nop(0x2D6EFC_b, 2);
-			utils::hook::nop(0x2DD646_b, 2);
+			utils::hook::nop(0x2D6F03_b, 2); // PM_UpdateAimDownSightLerp
+			utils::hook::nop(0x2DD64D_b, 2); // PM_Weapon_StartFiring
 
 			// Influence PM_JitterPoint code flow so the trace->startsolid checks are 'ignored'
 			pm_player_trace_hook.create(0x2D14C0_b, &pm_player_trace_stub);

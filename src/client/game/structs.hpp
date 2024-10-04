@@ -2233,6 +2233,24 @@ namespace game
 		int numtouch;
 		int touchents[32];
 		Bounds bounds;
+		float speed;
+		__int16 contactEntity;
+		int proneChange;
+		bool mantleStarted;
+		float mantleEndPos[3];
+		int mantleDuration;
+		float meleeEntOrigin[3];
+		float meleeEntVelocity[3];
+		int viewChangeTime;
+		float viewChange;
+		float fTorsoPitch;
+		float fWaistPitch;
+		int remoteTurretFireTime;
+		int remoteTurretShotCount;
+		int lastUpdateCMDServerTime;
+		bool boostEventPending;
+		unsigned int groundSurfaceType;
+		unsigned __int8 handler;
 	};
 
 	static_assert(offsetof(pmove_t, touchents) == 144);
