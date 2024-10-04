@@ -146,11 +146,8 @@ namespace hmw_tcp_utils {
 						std::string headerVal(value->buf, value->len);
 						headers.emplace(headerName, headerVal);
 
-						// Look for a specific header
-						if (headerName == "TestHeader") {
-							console::info("Processed test header: %s", headerVal);
-							continue;
-						}
+						// FUTURE: Process any header names here
+						
 					}
 
 					std::string data = getInfo_Json();
