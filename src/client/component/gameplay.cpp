@@ -400,6 +400,11 @@ namespace gameplay
 				"Flag whether player collision is on or off");
 			cm_transformed_capsule_trace_hook.create(0x4D63C0_b, cm_transformed_capsule_trace_stub);
 
+			// override PERK_MARATHON checks for PERK_LONGERSPRINT, PERK_MARATHON in H1 is in the second slot, so we override PERK_LONGERSPRINT which is in the first
+			utils::hook::set<uint32_t>(0x2CC682_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeftLastTime
+			utils::hook::set<uint32_t>(0x2CC609_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeft
+			utils::hook::set<uint32_t>(0x2CFAD7_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_UpdateSprint
+
 #ifdef DEBUG
 			// Make noclip work
 			client_end_frame_hook.create(0x3FF7D0_b, client_end_frame_stub2);
