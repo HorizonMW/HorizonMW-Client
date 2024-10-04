@@ -422,7 +422,7 @@ namespace server_list
 
 		try {
 			std::string game_server_info = connect_address + "/getInfo";
-			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), true, 1500L, true, 3);
+			std::string game_server_response = hmw_tcp_utils::GET_url(game_server_info.c_str(), {}, true, 1500L, true, 3);
 
 			if (!game_server_response.empty()) {
 				{
@@ -599,7 +599,7 @@ namespace server_list
 		notification_message = "Refreshing server list...";
 		ui_scripting::notify("showRefreshingNotification", {});
 
-		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), false, 10000L, true, 3);
+		std::string master_server_list = hmw_tcp_utils::GET_url(hmw_tcp_utils::MasterServer::get_master_server(), {}, false, 10000L, true, 3);
 
 		// Clear error message if any
 		if (error_is_displayed) {
@@ -614,7 +614,7 @@ namespace server_list
 		bool localhost = hmw_tcp_utils::GameServer::is_localhost(port);
 
 		if (localhost) {
-			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", false, 1500L, false, 1);
+			std::string local_res = hmw_tcp_utils::GET_url("localhost:27017/getInfo", {}, true, 1500L, false, 1);
 			if (!local_res.empty()) {
 				add_server_to_list(local_res, "localhost:27017", server_index->fetch_add(1));
 				ui_scripting::notify("updateGameList", {});
@@ -890,7 +890,7 @@ namespace server_list
 
 		const char* server_address = game_server_info.data();
 
-		std::string game_server_response = hmw_tcp_utils::GET_url(server_address, true, 1500L, true, 3);
+		std::string game_server_response = hmw_tcp_utils::GET_url(server_address, {}, true, 1500L, true, 3);
 
 		if (game_server_response.empty())
 		{

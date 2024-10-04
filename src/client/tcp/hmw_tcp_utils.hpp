@@ -37,7 +37,7 @@ namespace hmw_tcp_utils {
 
 #pragma region Misc functions
 	std::string getInfo_Json();
-	std::string GET_url(const char* url, bool addPing = false, long timeout = 1500L, bool doRetry = false, int retryMax = 4);
+	std::string GET_url(const char* url, const std::map<std::string, std::string>& headers = {}, bool addPing = false, long timeout = 1500L, bool doRetry = false, int retryMax = 4);
 
 	size_t GET_url_WriteCallback(void* contents, size_t size, size_t nmemb, void* userp);
 #pragma endregion
