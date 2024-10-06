@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration:
+          - Debug
+          - Release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Run generate.bat
+      run: .\generate.bat
+
+    - name: Build ${{matrix.configuration}} binaries
+      run: msbuild build\h2m-mod.sln /p:Configuration=${{matrix.configuration}} /p:Platform=x64 /m /v:minimal
+
+    - name: Upload ${{matrix.configuration}} binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{matrix.configuration}} binaries
+        if-no-files-found: error
+        path: |
+          build/bin/x64/${{matrix.configuration}}/h2m-mod.exe
+          build/bin/x64/${{matrix.configuration}}/h2m-mod.pdb
