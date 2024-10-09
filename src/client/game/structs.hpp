@@ -1410,7 +1410,7 @@ namespace game
 		BUTTON_UNK8 = (1 << 16), // ucmd->selectedLoc and ucmd->selectedLocAngle related
 		BUTTON_UNK9 = (1 << 17), // ??
 		BUTTON_UNK10 = (1 << 18), // ??
-		BUTTON_UNK11 = (1 << 19), // ??
+		BUTTON_SECONDARY_ATTACK = (1 << 19),
 		BUTTON_UNK12 = (1 << 20), // ucmd->remoteControlAngles and ucmd->remoteControlMove related
 		BUTTON_UNK13 = (1 << 21), // ??
 		BUTTON_UNK14 = (1 << 22), // ??

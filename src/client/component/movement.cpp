@@ -291,6 +291,12 @@ namespace movement
 			int weaponStateRight = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weaponState;
 			int weaponStateLeft = pm->ps->weapState[game::WEAPON_HAND_LEFT].weaponState;
 
+			// Patoke @note: don't override the inspection animation while sprinting (added for HMW)
+			if (weaponStateRight == game::WEAPON_HEAT_COOLDOWN_END || weaponStateLeft == game::WEAPON_HEAT_COOLDOWN_END)
+			{
+				return;
+			}
+
 			if (weaponStateRight != game::WEAPON_FIRING && weaponStateRight != game::WEAPON_RECHAMBERING && weaponStateRight != game::WEAPON_MELEE_WAIT_FOR_RESULT && weaponStateRight != game::WEAPON_MELEE_FIRE && weaponStateRight != game::WEAPON_MELEE_END)
 			{
 				if (weaponStateLeft != game::WEAPON_FIRING && weaponStateLeft != game::WEAPON_RECHAMBERING
@@ -384,7 +390,6 @@ namespace movement
 			auto should_sprint_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
 			if (should_sprint_stall)
 			{
-				console::debug("%d | %d", right_anim, left_anim);
 				stall_anim = true;
 			}
 
@@ -411,6 +416,11 @@ namespace movement
 
 			auto should_sprint = (playerstate->sprintState.lastSprintStart < playerstate->sprintState.lastSprintEnd);
 
+			auto do_glide =
+				blend_out_anim_index == game::WEAP_ANIM_SPRINT_IN || // allow glides on sprint drop
+				blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP || // allow glides on sprint loop
+				blend_out_anim_index == game::WEAP_ANIM_INSPECTION; // allow glides on inspect animations (added for HMW)
+
 #ifdef _DEBUG
 			// barrel rolls go from WEAP_ANIM_QUICK_RAISE/WEAP_ANIM_RAISE to WEAP_ANIM_IDLE
 			if ((blend_out_anim_index == game::WEAP_ANIM_QUICK_RAISE || blend_out_anim_index == game::WEAP_ANIM_RAISE)
@@ -420,8 +430,7 @@ namespace movement
 			}
 #endif
 
-			if ((blend_out_anim_index == game::WEAP_ANIM_SPRINT_IN || blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP) 
-				&& is_previous_anim(playerstate->weapState[player_hand_idx].weapAnim) && should_sprint)
+			if (do_glide && is_previous_anim(playerstate->weapState[player_hand_idx].weapAnim) && should_sprint)
 			{
 				blend_out_anim_index = game::WEAP_ANIM_QUICK_DROP;
 				transition_time = 0.5f;
@@ -508,7 +517,7 @@ namespace movement
 			pm_weapon_check_for_sprint_hook.create(0x2D9A10_b, pm_weapon_check_for_sprint_stub);
 			pm_sprint_ending_buttons_hook.create(0x2CEE40_b, pm_sprint_ending_buttons_stub);
 
-			// Patoke @note: this hook was reversed from iw4, it removes the slight "delay" for sprint whenever u shot making still swaps possible again
+			// Patoke @note: this hook was reversed from iw4, it removes the slight "delay" for sprint whenever u shot making some still swaps possible again
 			pm_sprint_start_interfering_buttons_hook.create(0x2CEEC0_b, pm_sprint_start_interfering_buttons_stub);
 
 			// force_play_weap_anim(anim_id, both_hands)
