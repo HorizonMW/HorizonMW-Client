@@ -535,7 +535,7 @@ namespace movement
 				dvar_flags, "Enables glides on the inspect animation");
 
 			dvars::g_legacyNacs = dvars::register_bool("g_legacyNacs", false,
-				dvar_flags, "Allows you to fast swap just by holding shift");
+				dvar_flags, "Allows you to fast swap just by holding shift (as seen in legacy H2M)");
 
 			// solitude mechanics, makes things a bit more fluid
 			begin_weapon_change_hook.create(0x2D57E0_b, begin_weapon_change_stub);
