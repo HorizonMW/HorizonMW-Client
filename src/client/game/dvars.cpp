@@ -27,6 +27,8 @@ namespace dvars
 	game::dvar_t* g_playerCollision = nullptr;
 	game::dvar_t* player_sustainAmmo = nullptr;
 	game::dvar_t* g_enableElevators = nullptr;
+	game::dvar_t* g_glideOnInspect = nullptr;
+	game::dvar_t* g_legacyNacs = nullptr;
 
 	game::dvar_t* g_speed = nullptr;
 

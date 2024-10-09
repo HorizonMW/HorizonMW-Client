@@ -30,7 +30,9 @@ namespace dvars
 	extern game::dvar_t* g_playerCollision;
 	extern game::dvar_t* player_sustainAmmo;
 	extern game::dvar_t* g_enableElevators;
-	
+	extern game::dvar_t* g_glideOnInspect;
+	extern game::dvar_t* g_legacyNacs;
+
 	extern game::dvar_t* g_speed;
 
 	extern game::dvar_t* g_gravity;

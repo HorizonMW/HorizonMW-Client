@@ -58,6 +58,8 @@ namespace movement
 		game::dvar_t* pm_cs_airAccelerate;
 		game::dvar_t* pm_cs_airSpeedCap;
 		game::dvar_t* pm_cs_strafing;
+		game::dvar_t* g_glideOnInspect;
+		game::dvar_t* g_legacyNacs;
 
 		void pm_air_accelerate(game::vec3_t wishdir, float wishspeed, game::playerState_s* ps, game::pml_t* pml)
 		{
@@ -387,7 +389,16 @@ namespace movement
 			auto right_anim = pm->ps->weapState[game::WEAPON_HAND_RIGHT].weapAnim;
 			auto left_anim = pm->ps->weapState[game::WEAPON_HAND_LEFT].weapAnim;
 
-			auto should_sprint_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
+			auto should_sprint_stall = false;
+			if (dvars::g_legacyNacs && dvars::g_legacyNacs->current.enabled)
+			{
+				should_sprint_stall = pm->cmd.buttons & game::BUTTON_SPRINT;
+			}
+			else 
+			{
+				should_sprint_stall = (pm->ps->sprintState.lastSprintStart > pm->ps->sprintState.lastSprintEnd);
+			}
+
 			if (should_sprint_stall)
 			{
 				stall_anim = true;
@@ -418,8 +429,13 @@ namespace movement
 
 			auto do_glide =
 				blend_out_anim_index == game::WEAP_ANIM_SPRINT_IN || // allow glides on sprint drop
-				blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP || // allow glides on sprint loop
-				blend_out_anim_index == game::WEAP_ANIM_INSPECTION; // allow glides on inspect animations (added for HMW)
+				blend_out_anim_index == game::WEAP_ANIM_SPRINT_LOOP; // allow glides on sprint loop
+
+			if (dvars::g_glideOnInspect && dvars::g_glideOnInspect->current.enabled)
+			{
+				// allow glides on inspect animations (added for HMW)
+				do_glide |= blend_out_anim_index == game::WEAP_ANIM_INSPECTION;
+			}
 
 #ifdef _DEBUG
 			// barrel rolls go from WEAP_ANIM_QUICK_RAISE/WEAP_ANIM_RAISE to WEAP_ANIM_IDLE
@@ -491,6 +507,13 @@ namespace movement
 	public:
 		void post_unpack() override
 		{
+			// flags for dvars that ARE cheat commands BUT are harmless most times
+			auto dvar_flags = game::DVAR_FLAG_CHEAT | game::DVAR_FLAG_REPLICATED;
+			if (game::environment::is_dedi())
+			{
+				dvar_flags = game::DVAR_FLAG_NONE | game::DVAR_FLAG_REPLICATED;
+			}
+
 			pm_airmove_hook.create(0x2C93B0_b, pm_airmove_stub);
 
 			// fix moveSpeedScale not being used
@@ -507,6 +530,12 @@ namespace movement
 			pm_cs_strafing = dvars::register_bool("pm_cs_strafing", false,
 				game::DVAR_FLAG_REPLICATED | game::DVAR_FLAG_CHEAT,
 				"Enable CS like strafing");
+
+			dvars::g_glideOnInspect = dvars::register_bool("g_glideOnInspect", false,
+				dvar_flags, "Enables glides on the inspect animation");
+
+			dvars::g_legacyNacs = dvars::register_bool("g_legacyNacs", false,
+				dvar_flags, "Allows you to fast swap just by holding shift");
 
 			// solitude mechanics, makes things a bit more fluid
 			begin_weapon_change_hook.create(0x2D57E0_b, begin_weapon_change_stub);

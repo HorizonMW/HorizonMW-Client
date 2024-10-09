@@ -1722,7 +1722,10 @@ namespace game
 		unsigned __int8 use_elite_clan_tag;
 		char elite_clan_tag_text[5];
 		int elite_clan_level;
-		char _pad1[20];
+		bool isMLGSpectator;
+		int game_extrainfo;
+		Material* rankIconHandle;
+		uint32_t rankDisplayLevel;
 		bool braggingRights;
 	};
 
