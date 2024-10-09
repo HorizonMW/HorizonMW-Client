@@ -31,52 +31,6 @@ namespace experimental
 #endif
 	namespace 
 	{
-		bool load_zone_files(const std::vector<std::string>& zone_files) 
-		{
-			game::XZoneInfo zone_allocs[7] = {};
-			int files_to_load = 0;
-
-			for (const auto& zone_file : zone_files)
-			{
-				if (fastfiles::exists(zone_file)) 
-				{
-					auto& zone = zone_allocs[files_to_load];
-
-					zone.name = zone_file.data();
-					zone.allocFlags = game::DB_ZONE_COMMON | game::DB_ZONE_CUSTOM;
-					zone.freeFlags = 0;
-
-					files_to_load++;
-				}
-				else
-				{
-					console::print(1, "Couldn't find zone %s\n", zone_file.data());
-				}
-			}
-
-			if (files_to_load == 0)
-				return false;
-			
-			game::DB_LoadXAssets(zone_allocs, files_to_load, game::DBSyncMode::DB_LOAD_ASYNC_NO_SYNC_THREADS);
-
-			return true;
-		}
-
-		void load_h2m_zones()
-		{
-			std::vector<std::string> new_zone_files = {};
-
-			new_zone_files.emplace_back("h2m_killstreak");
-			new_zone_files.emplace_back("h2m_attachments");
-			new_zone_files.emplace_back("h2m_ar1");
-			new_zone_files.emplace_back("h2m_smg");
-			new_zone_files.emplace_back("h2m_shotgun");
-			new_zone_files.emplace_back("h2m_launcher");
-			new_zone_files.emplace_back("h2m_rangers");
-
-			load_zone_files(new_zone_files);
-		}
-
 		void open_lui_mapvote() 
 		{
 			if (sv_open_menu_mapvote && sv_open_menu_mapvote->current.enabled)
@@ -590,9 +544,6 @@ namespace experimental
 			utils::hook::nop(0x26D99F_b, 5); // stop unk call (probably for server host?)
 			utils::hook::copy_string(0x8E31D8_b, "h2_loading_animation"); // swap loading icon
 			utils::hook::set<uint8_t>(0xC393F_b, 11); // increment persistent player data clcState check
-
-			// Marketing_Init stub
-			utils::hook::call(0x15CDB2_b, load_h2m_zones);
 
 			utils::hook::set<float>(0x8FBA04_b, 350.f); // modify position of loading information
 			utils::hook::set<uint8_t>(0x53C9FA_b, 0xEB); // Patoke @todo: what is this?

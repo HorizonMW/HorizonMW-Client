@@ -12,6 +12,7 @@ namespace bullet
 	{
 		game::dvar_t* bg_surface_penetration;
 		game::dvar_t* bg_fallback_max_range;
+		game::dvar_t* bg_penetrate_all;
 		utils::hook::detour bg_get_surface_penetration_depth_hook;
 
 		float bg_get_surface_penetration_depth_stub(game::Weapon weapon, bool is_alternate, int surface_type)
@@ -58,6 +59,71 @@ namespace bullet
 				"Modifies the max range for weapons without a defined damage range value (eg. Intervention)");
 
 			utils::hook::jump(0x3F3FFF_b, utils::hook::assemble(bullet_fire_internal_stub), true);
+
+			// Patoke @todo: finish implementing
+			//bg_penetrate_all = dvars::register_bool("bg_penetrateAll", false, flags,
+			//	"Forces bullet to penetrate all surfaces");
+
+			//// patch BG_GetSurfacePenetrationDepth call
+			//utils::hook::jump(0x3F36C2_b, utils::hook::assemble([](utils::hook::assembler& a)
+			//{
+			//	const auto return_stub = a.newLabel();
+
+			//	a.push(rax);
+			//	a.mov(rax, qword_ptr(reinterpret_cast<int64_t>(&bg_penetrate_all)));
+			//	a.mov(al, byte_ptr(rax, 0x10));
+			//	a.cmp(al, 1);
+			//	a.pop(rax);
+
+			//	a.jz(return_stub);
+
+			//	a.push(eax);
+			//	a.mov(eax, FLT_MAX);
+			//	a.movd(xmm7, eax);
+			//	a.pop(eax);
+
+			//	// skip whole penetration setup code
+			//	a.jmp(0x3F372D_b);
+
+			//	a.bind(return_stub);
+
+			//	// original code
+			//	a.test(rax, rax);
+			//	a.jz(0x3F36E8_b);
+			//	a.test(dword_ptr(rax, 0x1DC0), 0x80000);
+
+			//	a.jmp(0x3F36D4_b);
+			//}), true);
+
+			//// patch number of bullet penetrations possible
+			//utils::hook::jump(0x3F35CA_b, utils::hook::assemble([](utils::hook::assembler& a)
+			//{
+			//	const auto return_stub = a.newLabel();
+
+			//	a.push(rax);
+			//	a.mov(rax, qword_ptr(reinterpret_cast<int64_t>(&bg_penetrate_all)));
+			//	a.mov(al, byte_ptr(rax, 0x10));
+			//	a.cmp(al, 1);
+			//	a.pop(rax);
+
+			//	a.mov(ecx, 5);
+			//	a.mov(ptr(rsp, 0x80), 5);
+
+			//	a.jz(return_stub);
+
+			//	a.mov(ecx, INT_MAX);
+			//	a.mov(ptr(rsp, 0x80), INT_MAX);
+
+			//	a.jmp(0x3F3608_b);
+
+			//	a.bind(return_stub);
+
+			//	// original code
+			//	a.test(rax, rax);
+			//	a.jz(0x3F35E3_b);
+
+			//	a.jmp(0x3F35D7_b);
+			//}), true);
 		}
 	};
 }

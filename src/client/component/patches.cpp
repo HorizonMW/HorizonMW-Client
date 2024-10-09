@@ -321,11 +321,16 @@ namespace patches
 #endif
 		}
 
-		bool try_load_all_zones(std::vector<std::string> zones)
+		template<size_t N>
+		bool try_load_all_zones(std::array<std::string, N> zones)
 		{
-			game::XZoneInfo info[7]{};
+			auto* info = utils::memory::get_allocator()->allocate_array<game::XZoneInfo>(zones.size());
+			const auto _ = gsl::finally([&]() 
+			{
+				utils::memory::get_allocator()->free(info);
+			});
+			
 			int counter = 0;
-			bool has_onezone = false;
 			for (auto& zone : zones)
 			{
 				if (fastfiles::exists(zone))
@@ -334,7 +339,6 @@ namespace patches
 					info[counter].allocFlags = game::DB_ZONE_COMMON | game::DB_ZONE_CUSTOM;
 					info[counter].freeFlags = 0;
 					counter++;
-					has_onezone = true;
 				}
 				else
 				{
@@ -342,7 +346,7 @@ namespace patches
 				}
 			}
 
-			if (!has_onezone)
+			if (counter <= 0)
 				return false;
 
 			game::DB_LoadXAssets(info, counter, game::DBSyncMode::DB_LOAD_ASYNC_NO_SYNC_THREADS);
@@ -351,16 +355,18 @@ namespace patches
 		
 		void* ui_init_stub()
 		{
-			std::vector<std::string> zones;
-			zones.push_back("h2m_killstreak");
-			zones.push_back("h2m_attachments");
-			zones.push_back("h2m_ar1");
-			zones.push_back("h2m_smg");
-			zones.push_back("h2m_shotgun");
-			zones.push_back("h2m_launcher");
-			zones.push_back("h2m_rangers");
+			std::array<std::string, 7> zones
+			{
+				"h2m_killstreak",
+				"h2m_attachments",
+				"h2m_ar1",
+				"h2m_smg",
+				"h2m_shotgun",
+				"h2m_launcher",
+				"h2m_rangers"
+			};
+
 			try_load_all_zones(zones);
-			zones.clear();
 
 			return utils::hook::invoke<void*>(0x2A5540_b);
 		}

@@ -405,6 +405,10 @@ namespace gameplay
 			utils::hook::set<uint32_t>(0x2CC609_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeft
 			utils::hook::set<uint32_t>(0x2CFAD7_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_UpdateSprint
 
+			// Patoke @todo: verify if this works or not
+			// override PERK_COLDBLOODED mention for PERK_RADARIMMUNE, this is a bitshift, 13 is PERK_COLDBLOODED
+			utils::hook::set<uint8_t>(0x1160D9_b + 2, 14); // CG_Player
+
 #ifdef DEBUG
 			// Make noclip work
 			client_end_frame_hook.create(0x3FF7D0_b, client_end_frame_stub2);

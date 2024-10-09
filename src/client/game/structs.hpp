@@ -5,6 +5,8 @@
 
 #include "database.hpp"
 
+#define PERK_ARRAY_COUNT 4
+
 namespace game
 {
 	typedef float vec_t;
@@ -1395,14 +1397,14 @@ namespace game
 		BUTTON_UNK1 = (1 << 3), // ??
 		BUTTON_RELOAD = (1 << 4),
 		BUTTON_USERELOAD = (1 << 5), // BUTTON_USERELOAD | BUTTON_UNK1 == BUTTON_USE?
-		BUTTON_UNK3 = (1 << 6), // ??
-		BUTTON_UNK4 = (1 << 7), // ??
-		BUTTON_STANCE = (1 << 8),
-		BUTTON_UNK5 = (1 << 9), // on ps->eFlags & EF_DEAD
+		BUTTON_LEANLEFT = (1 << 6),
+		BUTTON_LEANRIGHT = (1 << 7),
+		BUTTON_PRONE = (1 << 8),
+		BUTTON_DUCK = (1 << 9),
 		BUTTON_GOSTAND = (1 << 10), // jump button
 		BUTTON_ADS = (1 << 11),
 		BUTTON_UNK6 = (1 << 12), // ??
-		BUTTON_UNK7 = (1 << 13), // ??
+		BUTTON_BREATH = (1 << 13), // hold breath
 		BUTTON_FRAG = (1 << 14),
 		BUTTON_SMOKE = (1 << 15),
 		BUTTON_UNK8 = (1 << 16), // ucmd->selectedLoc and ucmd->selectedLocAngle related
@@ -2019,7 +2021,7 @@ namespace game
 		Weapon weaponsEquipped[15]; // 604
 		PlayerEquippedWeaponState weapEquippedData[15]; // 664
 		PlayerWeaponCommonState weapCommon; // 0x4c0 (size: 4, global: 0xbb43d50)
-		unsigned int perks[4];
+		unsigned int perks[PERK_ARRAY_COUNT];
 		// Patoke @note: no idea if these are right, just added straight in for the lulz
 		ActionSlotType actionSlotType[4]; // 0x1f04 (size: 4, global: 0xbb44550)
 		ActionSlotParam actionSlotParam[4]; // 0x1f14 (size: 4, global: 0xbb445a0)
@@ -2145,7 +2147,11 @@ namespace game
 		DemoType demoType;
 		CubemapShot cubemapShot;
 		int cubemapSize;
-		char __pad4[28];
+		int hiResShotMode;
+		int renderScreen;
+		int latestSnapshotNum;
+		int latestSnapshotTime;
+		snapshot_s* snap;
 		snapshot_s* nextSnap;
 		char __pad1[582400];
 		int spectatingThirdPerson;

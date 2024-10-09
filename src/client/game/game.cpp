@@ -71,12 +71,14 @@ namespace game
 
 	uint32_t BG_GetPerkBit(unsigned int perkIndex)
 	{
-		return (1 << (perkIndex & 0x1F));
+		return (1 << static_cast<char>(perkIndex));
 	}
 
 	uint32_t BG_GetPerkSlot(unsigned int perkIndex)
 	{
-		return (perkIndex >> 5);
+		//return perkIndex / (128 / PERK_ARRAY_COUNT);
+		//return perkIndex / (32);
+		return perkIndex >> 5;
 	}
 
 	bool BG_HasPerk(const unsigned int* perks, unsigned int perkIndex)
