@@ -12,6 +12,7 @@
 
 #include "integrity.hpp"
 #include "breakpoints.hpp"
+#include "window_variations.hpp"
 
 
 #include "utils/obfus.hpp"
@@ -527,68 +528,7 @@ namespace arxan
 		}
 #endif
 
-		static const char* window_variations[] = {
-			// ReClass.NET variations
-			"ReClass.NET", "RECLASS.NET", "reclass.net",
-			"R3Cl@55.N37", "r3cl@55.n37", "R3CL@55.N3T",
-			"rEcLaSs.NeT", "ReClAsS.nEt", "ReClAsS.NeT", "rEcLaSs.nEt",
 
-			// CheatEngine variations
-			"CheatEngine", "CHEATENGINE", "cheatengine",
-			"Ch34t3n9in3", "CH34T3N91N3", "ch34t3n91n3",
-			"ChEaTeNgInE", "cHeAtEnGiNe", "ChEaTeNgInE", "cHeAtEnGiNe",
-
-			// Cheat Engine variations
-			"Cheat Engine", "CHEAT ENGINE", "cheat engine",
-			"Ch34t 3n91n3", "CH34T 3N91N3", "ch34t 3n91n3",
-			"ChEaT EnGiNe", "cHeAt eNgInE", "ChEaT EnGiNe", "cHeAt eNgInE",
-
-			// x64dbg variations
-			"x64dbg", "X64DBG", "x64dbg",
-			"x64db9", "X64DB9", "x64db9",
-			"x64DbG", "X64dBg", "x64DbG", "X64dBg",
-
-			// x32dbg variations
-			"x32dbg", "X32DBG", "x32dbg",
-			"x32db9", "X32DB9", "x32db9",
-			"x32DbG", "X32dBg", "x32DbG", "X32dBg",
-
-			// x96dbg variations
-			"x96dbg", "X96DBG", "x96dbg",
-			"x96db9", "X96DB9", "x96db9",
-			"x96DbG", "X96dBg", "x96DbG", "X96dBg",
-
-			// IDA variations
-			"IDA", "ida", "IdA", "idA",
-			"1D@", "1d@", "1DA", "ID@",
-
-			// HxD variations
-			"HxD", "HXD", "hxd",
-			"H><D", "H><D", "h><d",
-			"hXd", "HxD", "hXd", "HxD",
-
-			// Wireshark variations
-			"Wireshark", "WIREShark", "wireshark",
-			"W1r35h@rk", "W1R35H@RK", "w1r35h@rk",
-			"WiReShArK", "wIrEsHaRk", "WiReShArK", "wIrEsHaRk",
-
-			// Debug variations
-			"Debug", "DEBUG", "debug",
-			"D3bu9", "D3BU9", "d3bu9",
-			"DeBuG", "dEbUg", "DeBuG", "dEbUg",
-
-			// DEBUG variations
-			"DEBUG", "debug", "DEBUG",
-			"D3BUG", "d3bug", "D3BUG",
-			"DeBuG", "DEbUG", "DeBUG", "DEbUG",
-
-			// msvsmon variations
-			"msvsmon", "MSVSMON", "msvsmon",
-			"m5v5m0n", "M5V5M0N", "m5v5m0n",
-			"MsVsMoN", "mSvSmOn", "MsVsMoN", "mSvSmOn"
-
-			"ByteMeEngine", "ByteMeEngine 3"
-		};
 
 		static BOOL enumWindowCallback(HWND hWnd, LPARAM lparam)
 		{
