@@ -375,6 +375,7 @@ std::string getInfo_Json()
 		data["sv_discordImageText"] = party::get_dvar_string("sv_discordImageText");
 		data["port"] = utils::string::va("%i", party::get_dvar_int("net_port"));
 		data["sv_privateClients"] = utils::string::va("%i", party::get_dvar_int("sv_privateClients"));
+		data["sv_serverkey"] = party::get_dvar_string("sv_serverkey");
 
 		if (!fastfiles::is_stock_map(mapname))
 		{
