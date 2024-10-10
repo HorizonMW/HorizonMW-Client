@@ -530,8 +530,7 @@ namespace arxan
 
 
 
-		static BOOL enumWindowCallback(HWND hWnd, LPARAM lparam)
-		{
+		static BOOL enumWindowCallback(HWND hWnd, LPARAM lparam) {
 			int length = GetWindowTextLength(hWnd);
 			char* buffer = new char[length + 1];
 			GetWindowText(hWnd, buffer, length + 1);
@@ -539,16 +538,28 @@ namespace arxan
 			delete[] buffer;
 
 			// List visible windows with a non-empty title
-			if (IsWindowVisible(hWnd) && length != 0)
-			{
+			if (IsWindowVisible(hWnd) && length != 0) {
 				int variationsSize = sizeof(window_variations) / sizeof(window_variations[0]);
 
 				// Loop over the variations array
 				for (int i = 0; i < variationsSize; ++i) {
 					auto clean_variation = utils::string::to_lower(window_variations[i]);
-					if (strstr(utils::string::to_lower(windowTitle.c_str()).c_str(), clean_variation.c_str())) {
-						exit(0);
-						break;
+
+					// Search for complete matches
+					std::string lowerWindowTitle = utils::string::to_lower(windowTitle);
+					size_t pos = lowerWindowTitle.find(clean_variation);
+
+					// Check whether the variation is available as a complete word
+					while (pos != std::string::npos) {
+						bool isStart = (pos == 0 || lowerWindowTitle[pos - 1] == ' '); 
+						bool isEnd = (pos + clean_variation.length() == lowerWindowTitle.length() || lowerWindowTitle[pos + clean_variation.length()] == ' ');
+
+						if (isStart && isEnd) {
+							exit(0); 
+							break;
+						}
+
+						pos = lowerWindowTitle.find(clean_variation, pos + 1);
 					}
 				}
 			}
