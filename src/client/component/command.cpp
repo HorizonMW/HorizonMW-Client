@@ -587,6 +587,11 @@ namespace command
 	public:
 		void post_unpack() override
 		{
+			if (!game::environment::is_dedi())
+			{
+				utils::hook::set<uint8_t>(0x139B8A_b, 0xEB);
+			}
+
 			utils::hook::call(0x15C44B_b, parse_commandline_stub);
 			add_commands_mp();
 
