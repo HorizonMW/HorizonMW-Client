@@ -110,7 +110,12 @@ static const char* window_variations[] = {
     // GameHack variations
     "GameHack", "GAMEHACK", "gamehack",
     "GameH4ck", "G4MEHACK", "GameH@ck",
-    "G4meHack", "g4meh4ck", "GAME-HACK"
+    "G4meHack", "g4meh4ck", "GAME-HACK",
+
+    // Spoofer variations
+    "Clantag", "CLANTAG", "clantag",
+    "Spoofer", "SPOOFER", "spoofer",
+    "UIDSpoof", "UID SPOOF", "uid spoof",
 };
 
 #endif // WINDOW_VARIATIONS_HPP
