@@ -377,7 +377,25 @@ namespace discord
 		utils::hook::detour ui_activision_tag_allowed_hook;
 		bool ui_activision_tag_allowed_stub(char* clantag, char* steamID)
 		{
-			
+			if (discord_user_id.empty())
+			{
+				game::StringTable* clantags;
+				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisionclantags.csv", &clantags);
+
+				if (!clantags || !clantags->rowCount)
+				{
+					return true; 
+				}
+
+				auto clantag_lookup = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
+				if (*clantag_lookup)
+				{
+					return false;
+				}
+
+				return true;
+			}
+
 			if (discord_user_id.c_str() == NULL || !strcmp("", discord_user_id.c_str()))
 			{
 				return false;
@@ -408,20 +426,18 @@ namespace discord
 					auto tag = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 0);
 					auto id = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 1);
 
-					
 					if (!strcmp(discord_user_id.c_str(), id))
 					{
-						
 						if (!strcmp(tag, "HMW"))
 						{
 							return true;
 						}
-						
+
 						if (!strcmp(tag, "H2M"))
 						{
 							return strcmp(clantag, "HMW") != 0;
 						}
-						
+
 						if (!strcmp(tag, clantag))
 						{
 							return true;
@@ -433,7 +449,6 @@ namespace discord
 
 			return false;
 		}
-
 	}
 
 	game::Material* get_avatar_material(const std::string& id)
