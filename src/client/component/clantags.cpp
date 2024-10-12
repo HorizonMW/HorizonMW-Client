@@ -104,9 +104,38 @@ namespace clantags
 			return snapshot;
 		}
 
+		// Check if clantag  == HEX(01-20)
+		static inline bool is_hex_in_range(char c, int start, int end) {
+			return (static_cast<unsigned char>(c) >= start && static_cast<unsigned char>(c) <= end);
+		}
+		static inline bool contains_hex_01_to_20(const std::string& str) {
+			for (char c : str) {
+				if (is_hex_in_range(c, 0x01, 0x20)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		static inline char* copy(char* dst, const std::string& src, std::size_t len = std::string::npos)
+		{
+			if (len == std::string::npos)
+			{
+				return std::strcpy(dst, src.c_str());
+			}
+			else
+			{
+				return std::strncpy(dst, src.c_str(), len);
+			}
+		}
 		const char* gamerprofile_getclanname_stub(int controller)
 		{
 			auto clantag = gamerprofile_getclanname_hook.invoke<const char*>(controller);
+			if (contains_hex_01_to_20(clantag))
+			{
+				//optional: com_error
+				copy(*game::clanName, "none");
+				return "";
+			}
 			for (auto& tag : clantags::tags)
 			{
 				if (!strcmp(clantag, tag.first.data()) && game::UI_ActivisionClanTagAllowedForGamerTag(clantag, ""))
@@ -115,7 +144,6 @@ namespace clantags
 					break;
 				}
 			}
-
 			return clantag;
 		}
 
@@ -134,5 +162,7 @@ namespace clantags
 		}
 	};
 }
+
+
 
 REGISTER_COMPONENT(clantags::component)

@@ -18,14 +18,75 @@
 #include <utils/hook.hpp>
 #include <utils/string.hpp>
 #include <utils/flags.hpp>
+#include "clantag_utils.hpp"
+#include <utils/obfus.hpp>
+
 
 namespace patches
 {
 	namespace
 	{
+
+		static inline void to_lowercase(std::string& input)
+		{
+			std::transform(input.begin(), input.end(), input.begin(),
+				[](unsigned char c) { return std::tolower(c); });
+		}
+
+		static inline void to_uppercase(std::string& input)
+		{
+			std::transform(input.begin(), input.end(), input.begin(),
+				[](unsigned char c) { return std::toupper(c); });
+		}
+
+		static inline void remove_all_occurrences(std::string& text, std::string_view target)
+		{
+			std::string lowercase_text = text;
+			to_lowercase(lowercase_text);
+			std::string lowercase_target(target);
+			to_lowercase(lowercase_target);
+			size_t pos = 0;
+			while ((pos = lowercase_text.find(lowercase_target, pos)) != std::string::npos)
+			{
+				text.erase(pos, target.length());
+				lowercase_text.erase(pos, target.length());
+			}
+		}
+
+		static inline void remove_color_codes(std::string& text)
+		{
+			static const std::array<std::string_view, 10> color_codes = {
+				"^0", "^1", "^2", "^3", "^4", "^5", "^6", "^7", "^8", "^9"
+			};
+			for (const auto& code : color_codes)
+			{
+				remove_all_occurrences(text, code);
+			}
+		}
+
+		static inline void remove_material_handles(std::string& text)
+		{
+			remove_all_occurrences(text, "^\x01");
+			remove_all_occurrences(text, "^\x02");
+		}
+
+		static inline void clean_text(std::string& text)
+		{
+			remove_color_codes(text);
+			remove_material_handles(text);
+		}
+
+		// Force name set to "Unknown Soldier" if it contains hex 01 to 20
 		const char* live_get_local_client_name()
 		{
-			return game::Dvar_FindVar("name")->current.string;
+
+			std::string name = game::Dvar_FindVar("name")->current.string;
+			clean_text(name);
+			if (contains_hex_01_to_20(name))
+			{
+				return "Unknown Soldier";
+			}
+			return name.c_str();
 		}
 
 		utils::hook::detour sv_kick_client_num_hook;
@@ -40,6 +101,7 @@ namespace patches
 			return sv_kick_client_num_hook.invoke<void>(client_num, reason);
 		}
 
+		// Force name set to "Unknown Soldier" if it contains hex 01 to 20
 		std::string get_login_username()
 		{
 			char username[UNLEN + 1];
