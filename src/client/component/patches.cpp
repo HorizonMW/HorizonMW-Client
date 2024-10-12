@@ -55,8 +55,8 @@ namespace patches
 
 		static inline void remove_color_codes(std::string& text)
 		{
-			static const std::array<std::string_view, 10> color_codes = {
-				"^0", "^1", "^2", "^3", "^4", "^5", "^6", "^7", "^8", "^9"
+			static const std::array<std::string_view, 11> color_codes = {
+				"^0", "^1", "^2", "^3", "^4", "^5", "^6", "^7", "^8", "^9", "^:"
 			};
 			for (const auto& code : color_codes)
 			{
@@ -79,14 +79,17 @@ namespace patches
 		// Force name set to "Unknown Soldier" if it contains hex 01 to 20
 		const char* live_get_local_client_name()
 		{
-
 			std::string name = game::Dvar_FindVar("name")->current.string;
 			clean_text(name);
+
 			if (contains_hex_01_to_20(name))
 			{
-				return "Unknown Soldier";
+				name.erase(std::remove_if(name.begin(), name.end(), [](unsigned char c) {
+					return (c >= 0x01 && c <= 0x20);
+					}), name.end());
 			}
-			return name.c_str();
+
+			return name.empty() ? "Unknown Soldier" : name.c_str();
 		}
 
 		utils::hook::detour sv_kick_client_num_hook;
@@ -111,7 +114,12 @@ namespace patches
 				return "Unknown Soldier";
 			}
 
-			return std::string{username, username_len - 1};
+			std::string user_name_str{ username, username_len - 1 };
+			user_name_str.erase(std::remove_if(user_name_str.begin(), user_name_str.end(), [](unsigned char c) {
+				return (c >= 0x01 && c <= 0x20);
+				}), user_name_str.end());
+
+			return user_name_str.empty() ? "Unknown Soldier" : user_name_str;
 		}
 
 		utils::hook::detour com_register_dvars_hook;

@@ -413,7 +413,6 @@ namespace fastfiles
 
 			try_load_zone("h2m_post_gfx", true);
 			try_load_zone("h2m_common", true);
-			try_load_zone("h2m_clantags", true); //idk if this is the right place to add it but it works i guess
 			
 
 			game::DB_LoadXAssets(data.data(), static_cast<std::uint32_t>(data.size()), syncMode);
