@@ -380,19 +380,15 @@ namespace discord
 			if (discord_user_id.empty())
 			{
 				game::StringTable* clantags;
-				game::StringTable* horizonclantags;
-
 				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisionclantags.csv", &clantags);
-				utils::hook::invoke<void>(0x5A0A80_b, "mp/horizonclantags.csv", &horizonclantags);
 
-				if ((!clantags || !clantags->rowCount) && (!horizonclantags || !horizonclantags->rowCount))
+				if (!clantags || !clantags->rowCount)
 				{
-					return true;
+					return true; 
 				}
-				auto clantag_lookup_activision = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
-				auto clantag_lookup_horizon = utils::hook::invoke<const char*>(0x5A0B10_b, horizonclantags, 1, clantag, 0);
 
-				if (*clantag_lookup_activision || *clantag_lookup_horizon)
+				auto clantag_lookup = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
+				if (*clantag_lookup)
 				{
 					return false;
 				}
@@ -400,63 +396,57 @@ namespace discord
 				return true;
 			}
 
+			if (discord_user_id.c_str() == NULL || !strcmp("", discord_user_id.c_str()))
+			{
+				return false;
+			}
+
 			game::StringTable* gamertags_pc;
 			game::StringTable* clantags;
-			game::StringTable* horizongamertags_pc;
-			game::StringTable* horizonclantags;
 
 			if (clantag && *clantag)
 			{
 				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisiongamertags_pc.csv", &gamertags_pc);
 				utils::hook::invoke<void>(0x5A0A80_b, "mp/activisionclantags.csv", &clantags);
-				utils::hook::invoke<void>(0x5A0A80_b, "mp/horizongamertags_pc.csv", &horizongamertags_pc);
-				utils::hook::invoke<void>(0x5A0A80_b, "mp/horizonclantags.csv", &horizonclantags);
 
-				if (!gamertags_pc || !clantags || !horizongamertags_pc || !horizonclantags)
+				if (!gamertags_pc || !gamertags_pc->rowCount || !clantags || !clantags->rowCount)
 				{
 					return false;
 				}
 
-				auto clantag_lookup_activision = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
-				auto clantag_lookup_horizon = utils::hook::invoke<const char*>(0x5A0B10_b, horizonclantags, 1, clantag, 0);
-
-				if (!*clantag_lookup_activision && !*clantag_lookup_horizon)
+				auto clantag_lookup = utils::hook::invoke<const char*>(0x5A0B10_b, clantags, 1, clantag, 0);
+				if (!*clantag_lookup)
 				{
 					return true;
 				}
 
-				auto check_gamertags = [&](game::StringTable* gamertags, const char* clantag) {
-					int row_count = utils::hook::invoke<int>(0x5A0B00_b, gamertags);
-					for (int row_i = 0; row_i < row_count; ++row_i)
+				auto gamertags_row_count = utils::hook::invoke<int>(0x5A0B00_b, gamertags_pc);
+				for (auto row_i = 0; row_i < gamertags_row_count; ++row_i)
+				{
+					auto tag = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 0);
+					auto id = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags_pc, row_i, 1);
+
+					if (!strcmp(discord_user_id.c_str(), id))
 					{
-						auto tag = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags, row_i, 0);
-						auto id = utils::hook::invoke<char*>(0x5A0AC0_b, gamertags, row_i, 1);
-
-						if (!strcmp(discord_user_id.c_str(), id))
+						if (!strcmp(tag, "HMW"))
 						{
-							if (!strcmp(tag, "HMW"))
-							{
-								return true;
-							}
-							if (!strcmp(tag, "H2M"))
-							{
-								return strcmp(clantag, "HMW") != 0;
-							}
-							if (!strcmp(tag, clantag))
-							{
-								return true;
-							}
-							return false;
+							return true;
 						}
-					}
-					return false;
-					};
 
-				if (check_gamertags(gamertags_pc, clantag) || check_gamertags(horizongamertags_pc, clantag))
-				{
-					return true;
+						if (!strcmp(tag, "H2M"))
+						{
+							return strcmp(clantag, "HMW") != 0;
+						}
+
+						if (!strcmp(tag, clantag))
+						{
+							return true;
+						}
+						return false;
+					}
 				}
 			}
+
 			return false;
 		}
 	}
