@@ -27,9 +27,9 @@ namespace utils
 				return success;
 			}
 
-			instance->setAppName(L"h2m-mod");
+			instance->setAppName(L"hmw-mod");
 			instance->setAppUserModelId(
-				WinToastLib::WinToast::configureAUMI(L"h2m-mod", L"H2", L"", L"20201212"));
+				WinToastLib::WinToast::configureAUMI(L"hmw-mod", L"H2", L"", L"20201212"));
 
 			WinToastLib::WinToast::WinToastError error;
 			success = instance->initialize(&error);

@@ -61,7 +61,7 @@ namespace auth
 
 		std::string get_protected_data()
 		{
-			std::string input = "H2MMod-Auth";
+			std::string input = "HMWMod-Auth";
 
 			DATA_BLOB data_in{}, data_out{};
 			data_in.pbData = reinterpret_cast<uint8_t*>(input.data());

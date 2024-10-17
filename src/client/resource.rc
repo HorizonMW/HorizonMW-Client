@@ -70,15 +70,15 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "h2m-mod"
-            VALUE "FileDescription", "h2m-mod"
+            VALUE "CompanyName", "hmw-mod"
+            VALUE "FileDescription", "hmw-mod"
             VALUE "FileVersion", VERSION_FILE
-            VALUE "InternalName", "h2m-mod"
-            VALUE "LegalCopyright", "Copyright © 2024 h2m-mod. All rights reserved."
+            VALUE "InternalName", "hmw-mod"
+            VALUE "LegalCopyright", "Copyright © 2024 HorizonMW. All rights reserved."
             VALUE "Licence", "GPLv3"
             VALUE "Info", "https://h2m-mod.dev"
-            VALUE "OriginalFilename", "h2m-mod.exe"
-            VALUE "ProductName", "h2m-mod"
+            VALUE "OriginalFilename", "hmw-mod.exe"
+            VALUE "ProductName", "hmw-mod"
             VALUE "ProductVersion", VERSION_PRODUCT
         END
     END
