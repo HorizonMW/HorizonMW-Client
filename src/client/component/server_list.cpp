@@ -928,9 +928,9 @@ namespace server_list
 			return false;
 		}
 
-		// Only show H2M games
+		// Only show HMW games
 		std::string server_gamename = game_server_response_json["gamename"];
-		if (server_gamename != "H2M")
+		if (server_gamename != "HMW")
 		{
 			failed_to_join_reason = "Invalid gamename.";
 			return false;
@@ -1016,9 +1016,9 @@ namespace server_list
 			return;
 		}
 
-		// Only show H2M games
+		// Only show HMW games
 		std::string server_gamename = game_server_response_json["gamename"];
-		if (server_gamename != "H2M")
+		if (server_gamename != "HMW")
 		{
 			return;
 		}

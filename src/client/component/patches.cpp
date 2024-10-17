@@ -427,13 +427,13 @@ namespace patches
 		{
 			std::array<std::string, 7> zones
 			{
-				"h2m_killstreak",
-				"h2m_attachments",
-				"h2m_ar1",
-				"h2m_smg",
-				"h2m_shotgun",
-				"h2m_launcher",
-				"h2m_rangers"
+				"hmw_killstreak",
+				"hmw_attachments",
+				"hmw_ar1",
+				"hmw_smg",
+				"hmw_shotgun",
+				"hmw_launcher",
+				"hmw_rangers"
 			};
 
 			try_load_all_zones(zones);
@@ -623,7 +623,7 @@ namespace patches
 			utils::hook::call(0x1CBD06_b, sv_execute_client_message_stub);
 
 			// Change default hostname and make it replicated
-			dvars::override::register_string("sv_hostname", "^5H2M-Mod^7 Default Server", game::DVAR_FLAG_REPLICATED);
+			dvars::override::register_string("sv_hostname", "^5HorizonMW^7 Default Server", game::DVAR_FLAG_REPLICATED);
 
 			// Dont free server/client memory on asset loading (fixes crashing on map rotation)
 			utils::hook::nop(0x132474_b, 5);
@@ -641,12 +641,12 @@ namespace patches
 
 			/*
 			
-				H2M-Mod patches below here
+				HMW-Mod patches below here
 			
 			*/
-			// change names of window name + stat files for h2m
-			utils::hook::copy_string(0x926210_b, "H2M-Mod");	// window name
-			utils::hook::copy_string(0x929168_b, "H2M-Mod");	// mulitbyte string (window too?)
+			// change names of window name + stat files for hmw
+			utils::hook::copy_string(0x926210_b, "HorizonMW");	// window name
+			utils::hook::copy_string(0x929168_b, "HorizonMW");	// mulitbyte string (window too?)
 			utils::hook::copy_string(0x91F464_b, "h2mdta");		// mpdata
 			utils::hook::copy_string(0x91F458_b, "h2mcdta");	// commondata
 

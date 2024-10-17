@@ -62,7 +62,7 @@ namespace arena
 			const auto mapname = game::Dvar_FindVar("ui_mapname");
 			if (mapname && mapname->current.string)
 			{
-				const auto usermap_path = "h2m-usermaps/"s + mapname->current.string;
+				const auto usermap_path = "hmw-usermaps/"s + mapname->current.string;
 				const auto arena_path = usermap_path + "/" + mapname->current.string + ".arena";
 				parse_arena(arena_path);
 			}

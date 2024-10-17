@@ -132,7 +132,7 @@ namespace bots
 
 		void load_bot_data()
 		{
-			static const char* bots_txt = "h2m-mod/bots.txt";
+			static const char* bots_txt = "hmw-mod/bots.txt";
 
 			std::string bots_content;
 			if (!utils::io::read_file(bots_txt, &bots_content))

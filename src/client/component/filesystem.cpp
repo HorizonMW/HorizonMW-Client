@@ -48,16 +48,16 @@ namespace filesystem
 			filesystem::register_path(L".");
 			if (game::environment::is_dedi()) 
 			{
-				filesystem::register_path(L"h2m-mod\\zone");
+				filesystem::register_path(L"hmw-mod\\zone");
 			}
 			else 
 			{
-				filesystem::register_path(L"h2m-mod");
+				filesystem::register_path(L"hmw-mod");
 			}
 
 			// TODO: enable these for release
 #ifdef DEBUG
-			filesystem::register_path(L"h2m-mod-rawfiles"); // git repo in gamefiles lul
+			filesystem::register_path(L"hmw-mod-rawfiles"); // git repo in gamefiles lul
 			filesystem::register_path(L"devraw");
 			filesystem::register_path(L"devraw_shared");
 #endif
