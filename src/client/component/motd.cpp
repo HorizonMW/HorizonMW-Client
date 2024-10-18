@@ -110,7 +110,7 @@ namespace motd
 				return result;
 			};
 
-			const auto result = try_url("https://price.cdn.horizonmw.org/");
+			const auto result = try_url("https://price.horizonmw.org/");
 
 			if (result.has_value())
 			{

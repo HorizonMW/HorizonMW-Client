@@ -219,7 +219,7 @@ newaction {
 
 dependencies.load()
 
-workspace "h2m-mod"
+workspace "hmw-mod"
 startproject "client"
 location "./build"
 objdir "%{wks.location}/obj"
@@ -298,7 +298,7 @@ project "client"
 kind "ConsoleApp"
 language "C++"
 
-targetname "h2m-mod"
+targetname "hmw-mod"
 
 pchheader "std_include.hpp"
 pchsource "src/client/std_include.cpp"

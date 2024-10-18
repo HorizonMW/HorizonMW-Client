@@ -271,7 +271,7 @@ namespace hmw_tcp_utils {
 
 			const auto check_file = [&](const party::usermap_file& file)
 				{
-					const std::string filename = utils::string::va("h2m-usermaps/%s/%s%s",
+					const std::string filename = utils::string::va("hmw-usermaps/%s/%s%s",
 						mapname.data(), mapname.data(), file.extension.data());
 					const std::string source_hash = infoJson[file.name];
 					if (source_hash.empty())
@@ -355,7 +355,7 @@ std::string getInfo_Json()
 		const auto mapname = party::get_dvar_string("mapname");
 
 		//data["challenge"] = ""; // This is the server challenge, its unused now.
-		data["gamename"] = "H2M";
+		data["gamename"] = "HMW";
 		data["gameversion"] = get_version();
 		data["hostname"] = party::get_dvar_string("sv_hostname");
 		data["gametype"] = party::get_dvar_string("g_gametype");

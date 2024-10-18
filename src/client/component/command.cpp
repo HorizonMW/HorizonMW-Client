@@ -618,7 +618,7 @@ namespace command
 				std::string filename;
 				if (argument.size() == 2)
 				{
-					filename = "h2m-mod/";
+					filename = "hmw-mod/";
 					filename.append(argument[1]);
 					if (!filename.ends_with(".txt"))
 					{

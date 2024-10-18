@@ -16,7 +16,7 @@ namespace hmw_voice_chat {
 
 	namespace {
 		static constexpr auto MAX_VOICE_PACKET_DATA = 256;
-		static constexpr auto MAX_SERVER_QUEUED_VOICE_PACKETS = 1000;
+		static constexpr auto MAX_SERVER_QUEUED_VOICE_PACKETS = 2000;
 		static constexpr std::size_t MAX_CLIENTS = 18;
 
 		game::VoicePacket_t voice_packets[MAX_CLIENTS][MAX_SERVER_QUEUED_VOICE_PACKETS];

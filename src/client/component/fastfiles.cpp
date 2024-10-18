@@ -41,9 +41,9 @@ namespace fastfiles
 		void db_try_load_x_file_internal(const char* zone_name, const int flags)
 		{
 			static std::unordered_map<std::string, std::string> zone_overrides = {
-				{"patch_common_mp", "h2m_patch_common_mp"},
-				{"patch_ui_mp", "h2m_patch_ui_mp"},
-				{"patch_code_post_gfx_mp", "h2m_patch_code_post_gfx_mp"},
+				{"patch_common_mp", "hmw_patch_common_mp"},
+				{"patch_ui_mp", "hmw_patch_ui_mp"},
+				{"patch_code_post_gfx_mp", "hmw_patch_code_post_gfx_mp"},
 				{"patch_trainer", "patch_mp_vlobby_room"} // Override patch_trainer because we are unable to rebuild patch_mp_vlobby_room
 			};
 
@@ -285,7 +285,7 @@ namespace fastfiles
 
 			if (mapname == usermap_file || mapname == usermap_load_file || mapname == usermap_pak_file)
 			{
-				const auto path = utils::string::va("h2m-usermaps\\%s\\%s",
+				const auto path = utils::string::va("hmw-usermaps\\%s\\%s",
 					usermap_value.data(), mapname.data());
 				if (utils::io::file_exists(path))
 				{
@@ -395,8 +395,8 @@ namespace fastfiles
 			// code_pre_gfx
 
 			weapon::clear_modifed_enums();
-			try_load_zone("h2m_pre_gfx", true);
-			try_load_zone("h2m_files", false);
+			try_load_zone("hmw_pre_gfx", true);
+			try_load_zone("hmw_files", false);
 
 
 			game::DB_LoadXAssets(data.data(), static_cast<std::uint32_t>(data.size()), syncMode);
@@ -411,9 +411,8 @@ namespace fastfiles
 			// ui
 			// common
 
-			try_load_zone("h2m_post_gfx", true);
-			try_load_zone("h2m_common", true);
-			try_load_zone("h2m_clantags", true); //idk if this is the right place to add it but it works i guess
+			try_load_zone("hmw_post_gfx", true);
+			try_load_zone("hmw_common", true);
 			
 
 			game::DB_LoadXAssets(data.data(), static_cast<std::uint32_t>(data.size()), syncMode);
@@ -1185,7 +1184,7 @@ namespace fastfiles
 			return false;
 		}
 
-		return utils::io::file_exists(utils::string::va("h2m-usermaps\\%s\\%s.ff", name.data(), name.data()));
+		return utils::io::file_exists(utils::string::va("hmw-usermaps\\%s\\%s.ff", name.data(), name.data()));
 	}
 
 	bool is_stock_map(const std::string& name)

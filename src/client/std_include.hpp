@@ -69,9 +69,9 @@
 #include <misc/cpp/imgui_stdlib.h>
 #endif
 
-#define MSG_BOX_INFO(message) MessageBoxA(nullptr, message, "h2m-mod: INFORMATION", MB_ICONINFORMATION);
-#define MSG_BOX_WARN(message) MessageBoxA(nullptr, message, "h2m-mod: WARNING", MB_ICONWARNING);
-#define MSG_BOX_ERROR(message) MessageBoxA(nullptr, message, "h2m-mod: ERROR", MB_ICONERROR);
+#define MSG_BOX_INFO(message) MessageBoxA(nullptr, message, "hmw-mod: INFORMATION", MB_ICONINFORMATION);
+#define MSG_BOX_WARN(message) MessageBoxA(nullptr, message, "hmw-mod: WARNING", MB_ICONWARNING);
+#define MSG_BOX_ERROR(message) MessageBoxA(nullptr, message, "hmw-mod: ERROR", MB_ICONERROR);
 
 #include <map>
 #include <atomic>
