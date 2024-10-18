@@ -76,20 +76,19 @@ namespace patches
 			remove_material_handles(text);
 		}
 
-		// Force name set to "Unknown Soldier" if it contains hex 01 to 20
 		const char* live_get_local_client_name()
 		{
 			std::string name = game::Dvar_FindVar("name")->current.string;
-			clean_text(name);
+			clean_text(name); 
+			// Remove characters in the range from 0x01 to 0x20
+			name.erase(std::remove_if(name.begin(), name.end(), [](unsigned char c) {
+				return (c >= 0x01 && c <= 0x20);
+				}), name.end());
+			// Copy the cleaned name into a static string to avoid memory problems
+			static std::string safe_name;
+			safe_name = name.empty() ? "Unknown Soldier" : name;
 
-			if (contains_hex_01_to_20(name))
-			{
-				name.erase(std::remove_if(name.begin(), name.end(), [](unsigned char c) {
-					return (c >= 0x01 && c <= 0x20);
-					}), name.end());
-			}
-
-			return name.empty() ? "Unknown Soldier" : name.c_str();
+			return safe_name.c_str();
 		}
 
 		utils::hook::detour sv_kick_client_num_hook;
