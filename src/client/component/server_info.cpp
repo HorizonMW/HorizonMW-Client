@@ -45,7 +45,7 @@ namespace server_info
 		auto server_info = game::Dvar_InfoString_Big(1 << 10);
 		utils::info_string info(std::format("{}"s, server_info));
 
-		info.set("gamename", "H2M");
+		info.set("gamename", "HMW");
 		info.set("sv_maxclients", std::to_string(maxClientCount));
 		info.set("protocol", std::to_string(PROTOCOL));
 		info.set("version", VERSION);

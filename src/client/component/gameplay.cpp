@@ -316,6 +316,7 @@ namespace gameplay
 		}
 	}
 
+#pragma optimize("", off) 
 	class component final : public component_interface
 	{
 	public:
@@ -405,13 +406,22 @@ namespace gameplay
 			utils::hook::set<uint32_t>(0x2CC609_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_GetSprintLeft
 			utils::hook::set<uint32_t>(0x2CFAD7_b + 6, game::BG_GetPerkBit(game::PERK_LONGERSPRINT)); // PM_UpdateSprint
 
-			// override PERK_COLDBLOODED mention for PERK_RADARIMMUNE, this is a bitshift, 0x13 is PERK_COLDBLOODED
 			// this disables thermal vision
+			// override PERK_COLDBLOODED mention for PERK_RADARIMMUNE, this is a bitshift, 0x13 is PERK_COLDBLOODED
 			utils::hook::set<uint8_t>(0x1160D9_b + 2, 0x14); // CG_Player
 
-			// override perk bit of PERK_COLDBLOODED for PERK_RADARIMMUNE
-			// this disables red overlay over players (doesn't seem to work?)
-			utils::hook::set<uint32_t>(0x11607C_b + 3, game::BG_GetPerkBit(game::PERK_RADARIMMUNE)); // CG_Player
+			// this disables red overlay over players (thanks Krisztian01/heifdsv!)
+			// force perk to check to be perks[1] instead of perks[2]
+			utils::hook::set<uint8_t>(0x116107_b + 2, 0x18); // CG_Player
+			// force perk check to be for PERK_RADARIMMUNE rather than PERK_NOSCOPEOUTLINE
+			utils::hook::set<uint32_t>(0x11610E_b + 1, game::BG_GetPerkBit(game::PERK_RADARIMMUNE)); // CG_Player
+
+			// this disables the red boxes on top of people when in a killstreak
+			// override perk check for PERK_PLAINSIGHT | PERK_NOPLAYERTARGET to include PERK_RADARIMMUNE
+			uint32_t perk_bits = game::BG_GetPerkBit(game::PERK_PLAINSIGHT) |
+				game::BG_GetPerkBit(game::PERK_NOPLAYERTARGET) |
+				game::BG_GetPerkBit(game::PERK_RADARIMMUNE);
+			utils::hook::set<uint32_t>(0x181D94_b + 4, perk_bits); // DrawTargetBoxPlayers
 
 #ifdef DEBUG
 			// Make noclip work
@@ -422,5 +432,5 @@ namespace gameplay
 		}
 	};
 }
-
+#pragma optimize("", on)
 REGISTER_COMPONENT(gameplay::component)

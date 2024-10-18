@@ -75,7 +75,7 @@ namespace splash
 			{
 				ShowWindow(this->window_, SW_HIDE);
 				DestroyWindow(this->window_);
-				UnregisterClassA("H2M Splash Screen", utils::nt::library{});
+				UnregisterClassA("HMW Splash Screen", utils::nt::library{});
 			}
 		}
 
@@ -94,7 +94,7 @@ namespace splash
 			wnd_class.hIcon = LoadIconA(self, reinterpret_cast<LPCSTR>(102));
 			wnd_class.hCursor = LoadCursorA(nullptr, IDC_APPSTARTING);
 			wnd_class.hbrBackground = reinterpret_cast<HBRUSH>(6);
-			wnd_class.lpszClassName = "H2M Splash Screen";
+			wnd_class.lpszClassName = "HMW Splash Screen";
 
 			if (RegisterClassA(&wnd_class))
 			{
@@ -103,7 +103,7 @@ namespace splash
 
 				if (image_)
 				{
-					this->window_ = CreateWindowExA(WS_EX_APPWINDOW, "H2M Splash Screen", "H2M",
+					this->window_ = CreateWindowExA(WS_EX_APPWINDOW, "HMW Splash Screen", "HMW",
 						WS_POPUP | WS_SYSMENU,
 						(x_pixels - 320) / 2, (y_pixels - 100) / 2, 320, 100, nullptr,
 						nullptr,

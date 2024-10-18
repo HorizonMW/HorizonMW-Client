@@ -3,7 +3,7 @@
 #include "structs.hpp"
 #include "launcher/launcher.hpp"
 
-#define SERVER_CD_KEY "H2MOD-CD-Key"
+#define SERVER_CD_KEY "HMWOD-CD-Key"
 
 namespace game
 {

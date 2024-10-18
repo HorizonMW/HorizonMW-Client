@@ -165,7 +165,7 @@ namespace party
 
 		std::string get_usermap_file_path(const std::string& mapname, const std::string& extension)
 		{
-			return std::format("h2m-usermaps\\{}\\{}{}", mapname, mapname, extension);
+			return std::format("hmw-usermaps\\{}\\{}{}", mapname, mapname, extension);
 		}
 
 		// generate hashes so they are cached
@@ -206,7 +206,7 @@ namespace party
 
 			const auto check_file = [&](const usermap_file& file)
 			{
-				const std::string filename = utils::string::va("h2m-usermaps/%s/%s%s",
+				const std::string filename = utils::string::va("hmw-usermaps/%s/%s%s",
 					mapname.data(), mapname.data(), file.extension.data());
 				const auto source_hash = info.get(file.name);
 				if (source_hash.empty())
@@ -680,7 +680,7 @@ namespace party
 				}
 
 				std::string gamename = jsonObject["gamename"];
-				if (gamename != "H2M"s) {
+				if (gamename != "HMW"s) {
 					connecting_to_server = false;
 					menu_error("Connection failed: Invalid gamename.");
 					return;
@@ -760,7 +760,7 @@ namespace party
 
 	std::string get_usermap_file_path(const std::string& mapname, const std::string& extension)
 	{
-		return std::format("h2m-usermaps\\{}\\{}{}", mapname, mapname, extension);
+		return std::format("hmw-usermaps\\{}\\{}{}", mapname, mapname, extension);
 	}
 
 	std::string get_dvar_string(const std::string& dvar)
@@ -1175,7 +1175,7 @@ namespace party
 
 					utils::info_string info;
 					info.set("challenge", data);
-					info.set("gamename", "H2M");
+					info.set("gamename", "HMW");
 					info.set("hostname", get_dvar_string("sv_hostname"));
 					info.set("gametype", get_dvar_string("g_gametype"));
 					info.set("sv_motd", get_dvar_string("sv_motd"));

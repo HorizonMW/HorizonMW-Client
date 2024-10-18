@@ -232,9 +232,9 @@ namespace game_console
 			draw_input_box(1, dvars::con_inputBoxColor->current.vector);
 
 #ifdef DEBUG
-			draw_input_text_and_over("h2m-mod: " VERSION ">", color_title);
+			draw_input_text_and_over("HorizonMW: " VERSION ">", color_title);
 #else
-			draw_input_text_and_over("h2m-mod: >", color_title); // does this look good? idk
+			draw_input_text_and_over("HorizonMW: >", color_title); // does this look good? idk
 #endif
 
 			con.globals.left_x = con.globals.x;

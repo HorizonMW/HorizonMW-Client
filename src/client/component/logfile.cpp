@@ -279,7 +279,7 @@ namespace logfile
 			scheduler::once([]()
 			{
 				logfile = dvars::register_bool("logfile", true, game::DVAR_FLAG_NONE, "Enable game logging");
-				g_log = dvars::register_string("g_log", "h2m-mod\\logs\\games_mp.log", game::DVAR_FLAG_NONE, "Log file path");
+				g_log = dvars::register_string("g_log", "hmw-mod\\logs\\games_mp.log", game::DVAR_FLAG_NONE, "Log file path");
 			}, scheduler::pipeline::main);
 			g_log_printf_hook.create(game::G_LogPrintf, g_log_printf_stub);
 
