@@ -316,6 +316,7 @@ namespace gameplay
 		}
 	}
 
+#pragma optimize("", off) 
 	class component final : public component_interface
 	{
 	public:
@@ -431,5 +432,5 @@ namespace gameplay
 		}
 	};
 }
-
+#pragma optimize("", on)
 REGISTER_COMPONENT(gameplay::component)
