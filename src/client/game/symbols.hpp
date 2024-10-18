@@ -9,11 +9,11 @@ namespace game
 	 **************************************************************/
 	
 
-	WEAK symbol<void(int a, int b, game::playerState_s c)> BG_AddPredictableEventToPlayerstate{ 0x2C0F00 };
+	WEAK symbol<void(int a, int b, playerState_s c)> BG_AddPredictableEventToPlayerstate{ 0x2C0F00 };
 
 	WEAK symbol<void(int localClientNum, int controllerIndex, const char* text)> Cbuf_AddText{0x1CF480};
 	WEAK symbol<void(const char* text_in, int limit)> Cmd_TokenizeStringWithLimit{0x157A40};
-	WEAK symbol<int(game::playerState_s* ps)> BG_GetMaxSprintTime{ 0x2C3130 };
+	WEAK symbol<int(playerState_s* ps)> BG_GetMaxSprintTime{ 0x2C3130 };
 	WEAK symbol<int(Weapon weapon, bool isAlternate)> BG_SegmentedReload{ 0x2EA990 };
 	WEAK symbol<int(playerState_s* ps, int hand)> PM_Weapon_AllowReload{ 0x2D85B0 };
 	WEAK symbol<__int64(__int64 cgameBlob, __int64 base, unsigned int weaponID, __int64 weapDef, DWORD* color, unsigned int alignment, int hand)> DrawClipAmmoGeneric{ 0x2F20B0 };
@@ -355,15 +355,15 @@ namespace game
 
 	WEAK symbol<int(int local_client_num, int menu)> UI_SetActiveMenu{0x1E4D80};
 
-	WEAK symbol<int(const char*, game::StringTable**)> StringTable_GetAsset{ 0x5A0A80 };
-	WEAK symbol<char*(game::StringTable*, int, int)> StringTable_GetColumnValueForRow{ 0x5A0AC0 };
-	WEAK symbol<int(game::StringTable*)> StringTable_GetRowCount{ 0x5A0B00 };
+	WEAK symbol<int(const char*, StringTable**)> StringTable_GetAsset{ 0x5A0A80 };
+	WEAK symbol<char*(StringTable*, int, int)> StringTable_GetColumnValueForRow{ 0x5A0AC0 };
+	WEAK symbol<int(StringTable*)> StringTable_GetRowCount{ 0x5A0B00 };
 	WEAK symbol<bool(const char*, const char*)> UI_ActivisionClanTagAllowedForGamerTag{ 0x1D9800 };
 
 	WEAK symbol<void*(jmp_buf* Buf, int Value)> longjmp{0x826710};
 	WEAK symbol<int(jmp_buf* Buf)> _setjmp{0x8A3190};
 
-	WEAK symbol<game::cg_s*()> getCGArray{0x5CB80};
+	WEAK symbol<cg_s*()> getCGArray{0x5CB80};
 
 	WEAK symbol<void(int localClientNumber, const char* caller)> LiveStorage_EnsureMaySetPersistentData{ 0x19C2F0 };
 	WEAK symbol<DDLState*(DDLState* result, const DDLDef* ddlDef)> DDL_GetRoot{ 0x7938A0 };
@@ -405,15 +405,15 @@ namespace game
 	WEAK symbol<scrVmPub_t> scr_VmPub{0xB7AE3C0};
 	WEAK symbol<function_stack_t> scr_function_stack{0xB7B8940};
 
-	WEAK game::symbol<unsigned __int64> pmem_size{0xC92E1D8};
-	WEAK game::symbol<unsigned char*> pmem_buffer{0xC92E1D0};
+	WEAK symbol<unsigned __int64> pmem_size{0xC92E1D8};
+	WEAK symbol<unsigned char*> pmem_buffer{0xC92E1D0};
 
-	WEAK game::symbol<PhysicalMemory> g_mem{0xC92E1E0};
-	WEAK game::symbol<PhysicalMemory> g_scriptmem{0xC92EC40};
-	WEAK game::symbol<PhysicalMemory> g_physmem{0xC92F6A0};
+	WEAK symbol<PhysicalMemory> g_mem{0xC92E1E0};
+	WEAK symbol<PhysicalMemory> g_scriptmem{0xC92EC40};
+	WEAK symbol<PhysicalMemory> g_physmem{0xC92F6A0};
 
-	WEAK game::symbol<unsigned __int64> stream_size{0x258AA10};
-	WEAK game::symbol<unsigned char*> stream_buffer{0x258AA08};
+	WEAK symbol<unsigned __int64> stream_size{0x258AA10};
+	WEAK symbol<unsigned char*> stream_buffer{0x258AA08};
 
 	WEAK symbol<GfxDrawMethod_s> gfxDrawMethod{0xE9213F0};
 
@@ -493,7 +493,7 @@ namespace game
 
 	WEAK symbol<int[18]> s_clientTalkTime{ 0xC9DD1B0 };
 
-	WEAK game::symbol<int> cl_maxLocalClients{ 0x2E6EE30 };
+	WEAK symbol<int> cl_maxLocalClients{ 0x2E6EE30 };
 
 	namespace hks
 	{
