@@ -206,8 +206,8 @@ namespace demonware
 				}
 			};
 
-			copy_file("h2mcdta");
-			copy_file("h2mdta");
+			copy_file("hmwcdta");
+			copy_file("hmwdta");
 		}
 
 		return custom_path + name;
