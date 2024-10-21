@@ -6,6 +6,7 @@
 #include "game/game.hpp"
 #include "utils/hook.hpp"
 #include "utils/string.hpp"
+#include "clantag_utils.hpp"
 
 namespace clantags
 {
@@ -104,18 +105,22 @@ namespace clantags
 			return snapshot;
 		}
 
-		// Check if clantag  == HEX(01-20)
-		static inline bool is_hex_in_range(char c, int start, int end) {
-			return (static_cast<unsigned char>(c) >= start && static_cast<unsigned char>(c) <= end);
-		}
-		static inline bool contains_hex_01_to_20(const std::string& str) {
-			for (char c : str) {
-				if (is_hex_in_range(c, 0x01, 0x20)) {
-					return true;
+		static inline std::string remove_invalid_chars(const std::string& str) {
+			static const std::string invalid_suffixes = "0123456789:";
+			std::string result;
+
+			for (std::size_t i = 0; i < str.length(); ++i) {
+				if (str[i] == '^' && i + 1 < str.length() && invalid_suffixes.find(str[i + 1]) != std::string::npos) {
+					++i;  
+				}
+
+				else if (!is_hex_in_range(str[i], 0x01, 0x20)) {
+					result += str[i];
 				}
 			}
-			return false;
+			return result;
 		}
+
 		static inline char* copy(char* dst, const std::string& src, std::size_t len = std::string::npos)
 		{
 			if (len == std::string::npos)
@@ -127,24 +132,21 @@ namespace clantags
 				return std::strncpy(dst, src.c_str(), len);
 			}
 		}
+
 		const char* gamerprofile_getclanname_stub(int controller)
 		{
 			auto clantag = gamerprofile_getclanname_hook.invoke<const char*>(controller);
-			if (contains_hex_01_to_20(clantag))
-			{
-				//optional: com_error
-				copy(*game::clanName, "none");
-				return "";
-			}
+			std::string cleaned_clantag = remove_invalid_chars(clantag);
+
 			for (auto& tag : clantags::tags)
 			{
-				if (!strcmp(clantag, tag.first.data()) && game::UI_ActivisionClanTagAllowedForGamerTag(clantag, ""))
+				if (!strcmp(cleaned_clantag.c_str(), tag.first.data()) && game::UI_ActivisionClanTagAllowedForGamerTag(cleaned_clantag.c_str(), ""))
 				{
-					clantag = utils::string::va("^%c%c%c%c%s", 1, tag.second.width, tag.second.height, 2, tag.second.short_name.data());
+					cleaned_clantag = utils::string::va("^%c%c%c%c%s", 1, tag.second.width, tag.second.height, 2, tag.second.short_name.data());
 					break;
 				}
 			}
-			return clantag;
+			return cleaned_clantag.c_str();
 		}
 
 	}
@@ -162,7 +164,5 @@ namespace clantags
 		}
 	};
 }
-
-
 
 REGISTER_COMPONENT(clantags::component)
