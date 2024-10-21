@@ -646,8 +646,8 @@ namespace patches
 			// change names of window name + stat files for hmw
 			utils::hook::copy_string(0x926210_b, "HorizonMW");	// window name
 			utils::hook::copy_string(0x929168_b, "HorizonMW");	// mulitbyte string (window too?)
-			utils::hook::copy_string(0x91F464_b, "h2mdta");		// mpdata
-			utils::hook::copy_string(0x91F458_b, "h2mcdta");	// commondata
+			utils::hook::copy_string(0x91F464_b, "hmwdta");		// mpdata
+			utils::hook::copy_string(0x91F458_b, "hmwcdta");	// commondata
 
 			// overrides of lighting dvars to make it script-controlled instead (and replicated to server -> client)
 			dvars::override::register_bool("r_drawsun", 0, game::DVAR_FLAG_NONE | game::DVAR_FLAG_REPLICATED);
