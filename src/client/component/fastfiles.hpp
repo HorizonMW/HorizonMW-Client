@@ -20,6 +20,17 @@ namespace fastfiles
 	std::optional<std::string> get_current_usermap();
 	bool usermap_exists(const std::string& name);
 	bool is_stock_map(const std::string& name);
+	bool is_dlc_map(const std::string& name);
+
+	enum class MAP_EXISTS_RESULT {
+		BASE_GAME,
+		DLC,
+		USER,
+		MISSING
+	};
+
+	MAP_EXISTS_RESULT map_exists(const std::string& name);
+	
 
 	void enum_asset_entries(const game::XAssetType type, const std::function<void(game::XAssetEntry*)>& callback, bool include_override);
 }

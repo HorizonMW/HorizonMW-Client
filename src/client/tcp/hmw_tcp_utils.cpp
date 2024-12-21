@@ -259,7 +259,7 @@ namespace hmw_tcp_utils {
 		void check_download_map_tcp(const nlohmann::json infoJson, std::vector<download::file_t>& files)
 		{
 			const std::string mapname = infoJson["mapname"];
-			if (fastfiles::is_stock_map(mapname))
+			if (fastfiles::is_stock_map(mapname) || fastfiles::is_dlc_map(mapname))
 			{
 				return;
 			}

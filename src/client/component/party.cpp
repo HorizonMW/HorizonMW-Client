@@ -59,8 +59,25 @@ namespace party
 			command::execute("startentitlements", true);
 		}
 
+		void disconnect()
+		{
+			if (!game::VirtualLobby_Loaded())
+			{
+				if (game::CL_IsCgameInitialized())
+				{
+					// CL_AddReliableCommand
+					utils::hook::invoke<void>(0x12B810_b, 0, "disconnect");
+					// CL_WritePacket
+					utils::hook::invoke<void>(0x13D490_b, 0);
+				}
+				// CL_Disconnect
+				utils::hook::invoke<void>(0x12F080_b, 0);
+			}
+		}
+
 		void connect_to_party(const game::netadr_s& target, const std::string& mapname, const std::string& gametype)
 		{
+
 			if (game::Live_SyncOnlineDataFlags(0) != 0)
 			{
 				// initialize the game after onlinedataflags is 32 (workaround)
@@ -110,22 +127,6 @@ namespace party
 				return utils::hook::invoke<const char*>(0x5A0AC0_b, table, row, column);
 			}
 			return utils::string::va("%s", server_connection_state.motd.data());
-		}
-
-		void disconnect()
-		{
-			if (!game::VirtualLobby_Loaded())
-			{
-				if (game::CL_IsCgameInitialized())
-				{
-					// CL_AddReliableCommand
-					utils::hook::invoke<void>(0x12B810_b, 0, "disconnect");
-					// CL_WritePacket
-					utils::hook::invoke<void>(0x13D490_b, 0);
-				}
-				// CL_Disconnect
-				utils::hook::invoke<void>(0x12F080_b, 0);
-			}
 		}
 
 		utils::hook::detour cl_disconnect_hook;
@@ -430,7 +431,32 @@ namespace party
 		void set_new_map(const char* mapname, const char* gametype, game::msg_t* msg)
 		{
 			utils::hook::invoke<void>(0x27A040_b);
-			
+
+			auto map_type = fastfiles::map_exists(mapname);
+			if (map_type == fastfiles::MAP_EXISTS_RESULT::MISSING) 
+			{
+				console::error("Failed to find one or more fastfiles for: %s", std::string(mapname).c_str());
+
+				command::execute("disconnect");
+				scheduler::once([]
+					{
+						connect(server_connection_state.host);
+					}, scheduler::pipeline::main);
+
+				// remove from virt lobby?
+				utils::hook::invoke<void>(0x13C9C0_b, 1);
+
+				menu_error(
+					"Missing a required map file.\n"
+					"If map was a...\n"
+					"Base Game Map: verify game files.\n"
+					"DLC Map: verify you have the DLC.\n"
+					"HMW Map: verify mod files with HMW launcher.\n"
+				);
+
+				return;
+			}
+
 			if (!fastfiles::is_stock_map(mapname))
 			{
 				fastfiles::set_usermap(mapname);
@@ -705,6 +731,20 @@ namespace party
 				if (mapname.empty()) {
 					connecting_to_server = false;
 					menu_error("Connection failed: Invalid map.");
+					return;
+				}
+
+				auto map_type = fastfiles::map_exists(mapname);
+				if (map_type == fastfiles::MAP_EXISTS_RESULT::MISSING)
+				{
+					console::error("Failed to find fastfile for zone: %s", std::string(mapname).c_str());
+					menu_error("Missing a required map file.\n"
+						"If map was a...\n"
+						"Base Game Map: verify game files.\n"
+						"DLC Map: verify you have the DLC.\n"
+						"HMW Map: verify mod files with HMW launcher.\n"
+					);
+					connecting_to_server = false;
 					return;
 				}
 
