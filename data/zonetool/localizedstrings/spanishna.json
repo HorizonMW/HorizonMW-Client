@@ -1,0 +1,52 @@
+{
+    "LUA_MENU_FPS": "Contador de CPS",
+    "LUA_MENU_FPS_DESC": "Muestra el contador de CPS.",
+    "LUA_MENU_LATENCY": "Latencia del servidor",
+    "LUA_MENU_LATENCY_DESC": "Muestra la latencia del servidor.",
+    "LUA_MENU_RED_DOT_BRIGHTNESS": "Brillo del punto rojo",
+    "LUA_MENU_RED_DOT_BRIGHTNESS_DESC": "Configura el brillo del punto rojo de la retícula.",
+
+    "LUA_MENU_CAMPAIGN_UNLOCKED_ALL_TITLE": "Desbloquear todas las misiones",
+    "LUA_MENU_CANCEL_UNLOCK_CAPS": "Anular desbloqueo",
+
+    "MENU_MODS": "Mods",
+    "MENU_MODS_DESC": "Carga los mods instalados.",
+    "LUA_MENU_MOD_DESC_DEFAULT": "Carga &&1.",
+    "LUA_MENU_MOD_DESC": "&&1\nAutor: &&2\nVersión: &&3",
+    "LUA_MENU_LOADED_MOD": "Mod cargado: ^2&&1",
+    "LUA_MENU_AVAILABLE_MODS": "Mods disponibles",
+    "LUA_MENU_UNLOAD": "Descargar",
+    "LUA_MENU_UNLOAD_DESC": "Descarga el mod cargado actualmente.",
+
+    "PLATFORM_SHADER_PRECACHE_ASK": "¿Quieres rellenar la caché de sombreadores? Esto puede causar cuelgues en algunas tarjetas (por ejemplo, las RTX), pero puede mejorar el rendimiento.",
+    "MENU_NO_DONT_ASK": "No volver a preguntar",
+
+    "UPDATER_POPUP_NO_UPDATES_AVAILABLE": "No hay actualizaciones disponibles",
+    "MENU_CCS_NEW_PATCH_NOTICE": "Hay una actualización disponible,\n¿continuar instalación?",
+    "UPDATER_POPUP_SUCCESSFUL": "Actualización exitosa",
+    "MENU_CCS_RESTART_CONFIRMATION_TEXT": "La actualización requiere un reinicio",
+    "UPDATER_POPUP_CHECKING_FOR_UPDATES": "Buscando actualizaciones...",
+
+    "MPHUD_FPS": "CPS: ",
+    "MPHUD_LATENCY": "Latencia: ",
+    "MPHUD_LATENCY_MS": " ms",
+    "LUA_MENU_TELEMETRY": "TELEMETRÍA",
+
+    "LOCALE_ENGLISH": "English",
+    "LOCALE_ENGLISH_SAFE": "English (Safe)",
+    "LOCALE_FRENCH": "Français",
+    "LOCALE_GERMAN": "Deutsch",
+    "LOCALE_ITALIAN": "Italiano",
+    "LOCALE_JAPANESE_PARTIAL": "日本語(一部)",
+    "LOCALE_KOREAN": "한국어",
+    "LOCALE_POLISH": "Polski",
+    "LOCALE_PORTUGUESE": "Português",
+    "LOCALE_RUSSIAN": "Русский",
+    "LOCALE_SIMPLIFIED_CHINESE": "简体中文",
+    "LOCALE_SPANISH": "Español",
+    "LOCALE_TRADITIONAL_CHINESE": "繁體中文",
+    "MENU_QUIT_TO_DESKTOP": "Salir al escritorio",
+
+    "LUA_MENU_CHOOSE_LANGUAGE": "Elige el idioma",
+    "LUA_MENU_CHOOSE_LANGUAGE_DESC": "Elige el idioma."
+}
